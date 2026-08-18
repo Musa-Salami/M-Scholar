@@ -75,6 +75,46 @@ export default function AdminSettingsPage() {
         {saved && <p className="mt-3 text-sm text-emerald-700">Settings saved to the protected records vault.</p>}
         <p className="mt-3 text-xs text-slate-500">Saved settings survive reload and stay aligned across admin, finance, and portals.</p>
       </form>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          updateSettings(form);
+          setSaved(true);
+          window.setTimeout(() => setSaved(false), 2500);
+        }}
+        className="card-shadow mt-6 max-w-2xl rounded-2xl border border-slate-100 bg-white p-6"
+      >
+        <h3 className="font-display font-semibold text-slate-900">Generic login passwords</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          These passwords are suggested when you create a new user. You can still type a different password for each person. Share the login details with them after you create the profile.
+        </p>
+        <div className="mt-5 space-y-5">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Default password for teachers and officers</label>
+            <input
+              type="text"
+              value={form.defaultStaffPassword}
+              onChange={(e) => setForm({ ...form, defaultStaffPassword: e.target.value })}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+            />
+            <p className="mt-1 text-xs text-slate-500">Used with the user&apos;s email address.</p>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Default password for parents and students</label>
+            <input
+              type="text"
+              value={form.defaultFamilyPassword}
+              onChange={(e) => setForm({ ...form, defaultFamilyPassword: e.target.value })}
+              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+            />
+            <p className="mt-1 text-xs text-slate-500">Used with the user&apos;s phone number.</p>
+          </div>
+        </div>
+        <button type="submit" className="mt-6 rounded-xl bg-violet-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-violet-700">
+          Save login defaults
+        </button>
+      </form>
     </PortalShell>
   );
 }

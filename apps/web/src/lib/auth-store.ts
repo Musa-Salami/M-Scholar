@@ -3,6 +3,8 @@
 import { create } from "zustand";
 import type { AuthUser } from "@m-scholar/shared";
 import { DEMO_USERS, ROLE_DASHBOARD_PATH } from "@m-scholar/shared";
+import { findSchoolUserByLogin, findSchoolUserForAuth, toAuthUser } from "@/lib/credentials";
+import { useSchoolStore } from "@/lib/school-store";
 
 const SESSION_KEY = "mscholar-auth";
 
@@ -31,7 +33,7 @@ function readSession(): { user: AuthUser; isAuthenticated: true } | null {
     };
     const user = data?.user ?? data?.state?.user;
     const isAuthenticated = data?.isAuthenticated ?? data?.state?.isAuthenticated;
-    if (isAuthenticated && user?.email && user?.role) {
+    if (isAuthenticated && user?.role && (user.email || user.phone)) {
       return { user, isAuthenticated: true };
     }
   } catch {
@@ -40,10 +42,18 @@ function readSession(): { user: AuthUser; isAuthenticated: true } | null {
   return null;
 }
 
+function demoEntry(identifier: string) {
+  const key = identifier.toLowerCase().trim();
+  const direct = DEMO_USERS[key];
+  if (direct) return direct;
+  return Object.values(DEMO_USERS).find((entry) => entry.user.phone && identifier.replace(/\D/g, "") && entry.user.phone.replace(/\D/g, "").slice(-10) === identifier.replace(/\D/g, "").slice(-10));
+}
+
 interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => { ok: boolean; error?: string };
+  login: (identifier: string, password: string) => { ok: boolean; error?: string };
+  changePassword: (current: string, next: string) => { ok: boolean; error?: string };
   logout: () => void;
   dashboardPath: () => string;
   restore: () => void;
@@ -58,13 +68,47 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (session) set(session);
   },
 
-  login: (email, password) => {
-    const entry = DEMO_USERS[email.toLowerCase().trim()];
+  login: (identifier, password) => {
+    const schoolUser = findSchoolUserByLogin(useSchoolStore.getState().users ?? [], identifier);
+    if (schoolUser) {
+      const demo = schoolUser.email ? DEMO_USERS[schoolUser.email.toLowerCase()] : undefined;
+      const expected = schoolUser.password || demo?.password;
+      if (!expected || expected !== password) {
+        return { ok: false, error: "Invalid login details." };
+      }
+      const user = toAuthUser(schoolUser);
+      set({ user, isAuthenticated: true });
+      saveSession(user);
+      return { ok: true };
+    }
+
+    const entry = demoEntry(identifier);
     if (!entry || entry.password !== password) {
-      return { ok: false, error: "Invalid email or password." };
+      return { ok: false, error: "Invalid login details." };
     }
     set({ user: entry.user, isAuthenticated: true });
     saveSession(entry.user);
+    return { ok: true };
+  },
+
+  changePassword: (current, next) => {
+    const user = get().user;
+    if (!user) return { ok: false, error: "Sign in again to change your password." };
+    const trimmed = next.trim();
+    if (trimmed.length < 6) return { ok: false, error: "New password must be at least 6 characters." };
+    if (current === trimmed) return { ok: false, error: "Choose a different password." };
+
+    const schoolUser = findSchoolUserForAuth(useSchoolStore.getState().users ?? [], user);
+    const demo = user.email ? DEMO_USERS[user.email.toLowerCase()] : undefined;
+    const expected = schoolUser?.password || demo?.password;
+    if (!expected || expected !== current) {
+      return { ok: false, error: "Current password is incorrect." };
+    }
+    if (!schoolUser) {
+      return { ok: false, error: "Ask the school admin to set a new password on your profile." };
+    }
+    const result = useSchoolStore.getState().updateUser(schoolUser.id, { password: trimmed });
+    if (!result.ok) return { ok: false, error: result.error };
     return { ok: true };
   },
 

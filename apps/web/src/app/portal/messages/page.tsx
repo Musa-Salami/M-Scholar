@@ -7,6 +7,7 @@ import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useFinanceStore } from "@/lib/finance-store";
+import { studentLinkedToUser } from "@/lib/credentials";
 import { useCommsStore } from "@/lib/comms-store";
 import { cn } from "@/lib/utils";
 
@@ -22,11 +23,16 @@ export default function PortalMessagesPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const students = user
-    ? studentsAll.filter((st) => st.parentEmail === user.email || st.studentEmail === user.email)
+    ? studentsAll.filter((st) => studentLinkedToUser(st, user))
     : [];
   const student = students[0];
   const existingThread = user
-    ? threads.find((t) => t.parentEmail === user.email || t.studentId === student?.id)
+    ? threads.find(
+        (t) =>
+          t.parentEmail === user.email ||
+          t.parentEmail === user.phone ||
+          t.studentId === student?.id
+      )
     : undefined;
   const activeThread = threads.find((t) => t.id === threadId) ?? existingThread;
   const messages = activeThread ? messagesAll.filter((m) => m.threadId === activeThread.id) : [];
@@ -39,7 +45,7 @@ export default function PortalMessagesPage() {
     }
     const created = getOrCreateThread(
       student.id,
-      user.email,
+      student.parentEmail || user.email || user.phone || "",
       "Emeka Nwosu",
       student.name,
       student.className

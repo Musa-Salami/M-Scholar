@@ -8,6 +8,7 @@ import { DataTable, StatusBadge } from "@/components/finance-ui";
 import { ReceiptModal } from "@/components/receipt-modal";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useFinanceStore } from "@/lib/finance-store";
+import { studentLinkedToUser } from "@/lib/credentials";
 import { formatCurrency } from "@/lib/utils";
 import type { Payment } from "@m-scholar/shared";
 
@@ -27,7 +28,7 @@ export default function PortalFeesPage() {
   }
 
   const ids = new Set(
-    students.filter((st) => st.parentEmail === user.email || st.studentEmail === user.email).map((s) => s.id)
+    students.filter((st) => studentLinkedToUser(st, user)).map((s) => s.id)
   );
   const invoices = invoicesAll.filter((i) => ids.has(i.studentId));
   const payments = paymentsAll.filter((p) => ids.has(p.studentId));

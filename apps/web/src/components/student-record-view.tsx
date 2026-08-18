@@ -81,6 +81,7 @@ export function StudentRecordDetails({ student }: { student: Student }) {
           <span className="text-slate-500">Parent</span>
           <br />
           <span className="font-medium text-slate-900">{student.parentEmail}</span>
+          {student.parentPhone ? <span className="block text-xs font-normal text-slate-500">{student.parentPhone}</span> : null}
         </p>
         <p>
           <span className="text-slate-500">Published subjects</span>
@@ -99,7 +100,7 @@ export function StudentRecordDetails({ student }: { student: Student }) {
 
 export function StudentLookupPanel({
   title = "Pull student records",
-  description = "Search by name, admission number, class, or parent email. Download a result PDF when it has been published.",
+  description = "Search by name, admission number, class, parent email, or phone. Download a result PDF when it has been published.",
 }: {
   title?: string;
   description?: string;
@@ -118,7 +119,9 @@ export function StudentLookupPanel({
         s.admissionNo.toLowerCase().includes(q) ||
         s.className.toLowerCase().includes(q) ||
         s.parentEmail.toLowerCase().includes(q) ||
-        (s.studentEmail ?? "").toLowerCase().includes(q)
+        (s.studentEmail ?? "").toLowerCase().includes(q) ||
+        (s.parentPhone ?? "").toLowerCase().includes(q) ||
+        (s.studentPhone ?? "").toLowerCase().includes(q)
     );
   }, [students, query]);
 

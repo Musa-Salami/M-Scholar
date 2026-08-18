@@ -30,6 +30,7 @@ const SEED_STUDENTS: Student[] = [
     dateOfBirth: "2013-04-12",
     parentAddress: "14 Adeniran Street, Ikeja, Lagos",
     parentPhone: "+234 801 555 1042",
+    studentPhone: "+234 809 555 1042",
     disability: "None",
     allergy: "Peanuts",
   },
@@ -131,6 +132,7 @@ function normalizeStudent(s: Student): Student {
     dateOfBirth: s.dateOfBirth ?? "",
     parentAddress: s.parentAddress ?? "",
     parentPhone: s.parentPhone ?? "",
+    studentPhone: s.studentPhone ?? "",
     disability: s.disability ?? "None",
     allergy: s.allergy ?? "None",
   };

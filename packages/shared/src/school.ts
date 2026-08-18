@@ -32,28 +32,28 @@ export const LOGIN_PORTALS: Record<
 > = {
   family: {
     title: "Parent & Student",
-    description: "Attendance, fees, results, notes, and messages in one portal.",
+    description: "Sign in with the phone number and password set by the school.",
     href: "/login/family",
     roles: ["parent", "student"],
     accent: "sky",
   },
   teacher: {
     title: "Teacher",
-    description: "Attendance, assessments, notes, and parent communication.",
+    description: "Sign in with the email and password set by the school.",
     href: "/login/teacher",
     roles: ["class_teacher"],
     accent: "amber",
   },
   admin: {
     title: "Admin",
-    description: "Users, classes, school settings, and audit log.",
+    description: "Sign in with the admin email and password.",
     href: "/login/admin",
     roles: ["super_admin"],
     accent: "violet",
   },
   finance: {
     title: "Finance Officer",
-    description: "Fees, payments, payroll, income, and expenditure.",
+    description: "Sign in with the finance email and password.",
     href: "/login/finance",
     roles: ["account_officer"],
     accent: "emerald",

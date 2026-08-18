@@ -33,6 +33,7 @@ const EMPTY_FORM = {
   dateOfBirth: "",
   parentAddress: "",
   parentPhone: "",
+  studentPhone: "",
   disability: "None",
   allergy: "None",
   admissionNo: "",
@@ -50,6 +51,7 @@ function fromStudent(s: Student) {
     dateOfBirth: s.dateOfBirth ?? "",
     parentAddress: s.parentAddress ?? "",
     parentPhone: s.parentPhone ?? "",
+    studentPhone: s.studentPhone ?? "",
     disability: s.disability || "None",
     allergy: s.allergy || "None",
     admissionNo: s.admissionNo,
@@ -136,6 +138,7 @@ export default function AdminStudentsPage() {
       dateOfBirth: form.dateOfBirth,
       parentAddress: form.parentAddress.trim(),
       parentPhone: form.parentPhone.trim(),
+      studentPhone: form.studentPhone.trim(),
       disability: form.disability.trim() || "None",
       allergy: form.allergy.trim() || "None",
     };
@@ -232,8 +235,11 @@ export default function AdminStudentsPage() {
             <FormField label="Parent email">
               <input type="email" className={fieldClass} value={form.parentEmail} disabled={readOnly} onChange={(e) => setForm({ ...form, parentEmail: e.target.value })} required />
             </FormField>
-            <FormField label="Parent phone number">
+            <FormField label="Parent phone (portal login)">
               <input type="tel" className={fieldClass} value={form.parentPhone} disabled={readOnly} onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} required />
+            </FormField>
+            <FormField label="Student phone (portal login)">
+              <input type="tel" className={fieldClass} value={form.studentPhone} disabled={readOnly} onChange={(e) => setForm({ ...form, studentPhone: e.target.value })} placeholder="Optional until a student login is created" />
             </FormField>
             <FormField label="Parent address">
               <input className={fieldClass} value={form.parentAddress} disabled={readOnly} onChange={(e) => setForm({ ...form, parentAddress: e.target.value })} required />

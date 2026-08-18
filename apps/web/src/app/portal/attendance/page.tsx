@@ -5,6 +5,7 @@ import { PortalShell } from "@/components/portal-shell";
 import { PageHeader, StatCard } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useFinanceStore } from "@/lib/finance-store";
+import { studentLinkedToUser } from "@/lib/credentials";
 import { useAcademicStore } from "@/lib/academic-store";
 import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,9 +30,7 @@ export default function PortalAttendancePage() {
     );
   }
 
-  const students = studentsAll.filter(
-    (st) => st.parentEmail === user.email || st.studentEmail === user.email
-  );
+  const students = studentsAll.filter((st) => studentLinkedToUser(st, user));
   const student = students[0];
   const entries = student
     ? registers

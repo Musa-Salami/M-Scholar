@@ -13,6 +13,7 @@ export type UserRole =
 export interface AuthUser {
   id: string;
   email: string;
+  phone?: string;
   firstName: string;
   lastName: string;
   role: UserRole;
@@ -90,7 +91,7 @@ export const DEMO_USERS: Record<string, { password: string; user: AuthUser }> = 
   "admin@mscholar.app": {
     password: "admin123",
     user: {
-      id: "1",
+      id: "u1",
       email: "admin@mscholar.app",
       firstName: "System",
       lastName: "Administrator",
@@ -100,7 +101,7 @@ export const DEMO_USERS: Record<string, { password: string; user: AuthUser }> = 
   "finance@mscholar.app": {
     password: "finance123",
     user: {
-      id: "2",
+      id: "u2",
       email: "finance@mscholar.app",
       firstName: "Adaeze",
       lastName: "Okonkwo",
@@ -110,7 +111,7 @@ export const DEMO_USERS: Record<string, { password: string; user: AuthUser }> = 
   "teacher@mscholar.app": {
     password: "teacher123",
     user: {
-      id: "3",
+      id: "u3",
       email: "teacher@mscholar.app",
       firstName: "Emeka",
       lastName: "Nwosu",
@@ -120,8 +121,9 @@ export const DEMO_USERS: Record<string, { password: string; user: AuthUser }> = 
   "parent@mscholar.app": {
     password: "parent123",
     user: {
-      id: "4",
+      id: "u7",
       email: "parent@mscholar.app",
+      phone: "+234 801 555 1042",
       firstName: "Fatima",
       lastName: "Bello",
       role: "parent",
@@ -130,8 +132,9 @@ export const DEMO_USERS: Record<string, { password: string; user: AuthUser }> = 
   "student@mscholar.app": {
     password: "student123",
     user: {
-      id: "5",
+      id: "u8",
       email: "student@mscholar.app",
+      phone: "+234 809 555 1042",
       firstName: "Amina",
       lastName: "Bello",
       role: "student",

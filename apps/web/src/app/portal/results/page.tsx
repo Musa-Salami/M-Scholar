@@ -6,6 +6,7 @@ import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useFinanceStore } from "@/lib/finance-store";
+import { studentLinkedToUser } from "@/lib/credentials";
 import { useAcademicStore } from "@/lib/academic-store";
 import { ReportCardModal } from "@/components/report-card-modal";
 import { obtainableMarks } from "@/lib/report-card";
@@ -25,9 +26,7 @@ export default function PortalResultsPage() {
     );
   }
 
-  const students = studentsAll.filter(
-    (st) => st.parentEmail === user.email || st.studentEmail === user.email
-  );
+  const students = studentsAll.filter((st) => studentLinkedToUser(st, user));
   const student = students[0];
   const results = student
     ? termResults.filter((r) => r.studentId === student.id && r.status === "published")

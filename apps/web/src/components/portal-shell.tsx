@@ -23,6 +23,7 @@ import {
   Calendar,
   Award,
   LogOut,
+  KeyRound,
   Menu,
   X,
   type LucideIcon,
@@ -33,6 +34,7 @@ import { ROLE_LABELS } from "@m-scholar/shared";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import { NotificationBell } from "@/components/notification-bell";
+import { ChangePasswordModal } from "@/components/change-password-modal";
 import { useAuthReady } from "@/hooks/use-auth-ready";
 import { pageHref } from "@/lib/paths";
 
@@ -98,6 +100,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
   const logout = useAuthStore((s) => s.logout);
   const ready = useAuthReady();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
   const current = (pathname ?? "").replace(/\/$/, "") || "/";
 
   if (!ready || !user) {
@@ -153,6 +156,14 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
               {ROLE_LABELS[user.role]}
             </span>
           </div>
+          <button
+            type="button"
+            onClick={() => setPasswordOpen(true)}
+            className="mb-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+          >
+            <KeyRound className="h-4 w-4" />
+            Change password
+          </button>
           <button
             onClick={() => {
               logout();
@@ -216,6 +227,16 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
                 <button
                   type="button"
                   onClick={() => {
+                    setMobileOpen(false);
+                    setPasswordOpen(true);
+                  }}
+                  className="rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  Change password
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
                     logout();
                     window.location.href = "/login/";
                   }}
@@ -230,6 +251,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
 
         <main className="flex-1 overflow-auto p-4 md:p-8">{children}</main>
       </div>
+      {passwordOpen && <ChangePasswordModal onClose={() => setPasswordOpen(false)} />}
     </div>
   );
 }

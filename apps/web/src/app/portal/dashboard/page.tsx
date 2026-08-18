@@ -12,6 +12,7 @@ import { useCommsStore } from "@/lib/comms-store";
 import { useNotificationStore } from "@/lib/notification-store";
 import { formatCurrency } from "@/lib/utils";
 import { pageHref } from "@/lib/paths";
+import { studentLinkedToUser } from "@/lib/credentials";
 
 const NOTE_TONE: Record<NotePriority, string> = {
   info: "border-sky-300 bg-sky-50",
@@ -69,9 +70,7 @@ export default function PortalDashboardPage() {
     );
   }
 
-  const mine = students.filter(
-    (st) => st.parentEmail === user.email || st.studentEmail === user.email
-  );
+  const mine = students.filter((st) => studentLinkedToUser(st, user));
   const student = mine[0];
   const ids = new Set(mine.map((s) => s.id));
   const myInvoices = invoices.filter((i) => ids.has(i.studentId));

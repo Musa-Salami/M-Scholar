@@ -27,6 +27,7 @@ export interface Student {
   className: string;
   parentEmail: string;
   studentEmail?: string;
+  studentPhone?: string;
   dateOfBirth: string;
   parentAddress: string;
   parentPhone: string;

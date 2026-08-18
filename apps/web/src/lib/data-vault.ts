@@ -20,6 +20,8 @@ export interface AppSnapshot {
       term: string;
       principalName?: string;
       nextTermResumptionDate?: string;
+      defaultStaffPassword?: string;
+      defaultFamilyPassword?: string;
     };
   };
   finance: {

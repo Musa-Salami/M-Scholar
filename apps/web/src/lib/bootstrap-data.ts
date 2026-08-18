@@ -77,6 +77,8 @@ function asSettings(raw: AppSnapshot["school"]["settings"] | undefined): SchoolS
     term: raw?.term || SEED_SETTINGS.term,
     principalName: raw?.principalName || SEED_SETTINGS.principalName,
     nextTermResumptionDate: raw?.nextTermResumptionDate || SEED_SETTINGS.nextTermResumptionDate,
+    defaultStaffPassword: raw?.defaultStaffPassword ?? SEED_SETTINGS.defaultStaffPassword,
+    defaultFamilyPassword: raw?.defaultFamilyPassword ?? SEED_SETTINGS.defaultFamilyPassword,
   };
 }
 
