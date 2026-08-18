@@ -1,18 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { ADMIN_NAV, ROLE_LABELS, type UserRole } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-
-const INITIAL_USERS = [
-  { id: "1", name: "System Administrator", email: "admin@mscholar.app", role: "super_admin" as UserRole, status: "Active" },
-  { id: "2", name: "Adaeze Okonkwo", email: "finance@mscholar.app", role: "account_officer" as UserRole, status: "Active" },
-  { id: "3", name: "Emeka Nwosu", email: "teacher@mscholar.app", role: "class_teacher" as UserRole, status: "Active" },
-  { id: "4", name: "Fatima Bello", email: "parent@mscholar.app", role: "parent" as UserRole, status: "Active" },
-];
+import { useSchoolReady } from "@/hooks/use-school-ready";
+import { useSchoolStore } from "@/lib/school-store";
 
 const ROLE_BADGE: Record<UserRole, string> = {
   super_admin: "bg-violet-100 text-violet-700",
@@ -23,31 +18,33 @@ const ROLE_BADGE: Record<UserRole, string> = {
 };
 
 export default function AdminUsersPage() {
-  useRequireAuth(["super_admin"]);
-  const [users, setUsers] = useState(INITIAL_USERS);
+  const { ready: authReady } = useRequireAuth(["super_admin"]);
+  const schoolReady = useSchoolReady();
+  const users = useSchoolStore((s) => s.users);
+  const addUser = useSchoolStore((s) => s.addUser);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", role: "class_teacher" as UserRole });
 
-  const filtered = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return users.filter(
+      (u) => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    );
+  }, [users, search]);
+
+  if (!authReady || !schoolReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-500">Loading portal…</p>
+      </div>
+    );
+  }
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.email) return;
-    setUsers((prev) => [
-      ...prev,
-      {
-        id: String(prev.length + 1),
-        name: form.name,
-        email: form.email,
-        role: form.role,
-        status: "Active",
-      },
-    ]);
+    addUser({ name: form.name, email: form.email, role: form.role });
     setForm({ name: "", email: "", role: "class_teacher" });
     setShowForm(false);
   };
@@ -56,7 +53,7 @@ export default function AdminUsersPage() {
     <PortalShell navItems={ADMIN_NAV} title="Super Admin Portal">
       <PageHeader
         title="User Management"
-        description="Create and manage login profiles for all portal roles."
+        description="Create and manage login profiles for all portal roles. Class teachers added here can be assigned to a class."
         action={
           <button
             onClick={() => setShowForm(true)}
