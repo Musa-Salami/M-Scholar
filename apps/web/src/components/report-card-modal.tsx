@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Printer, X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import type { TermResult } from "@m-scholar/shared";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useAcademicStore } from "@/lib/academic-store";
@@ -81,47 +81,6 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
     ]);
     pdf.paragraph(`This terminal report is an official record of ${settings.schoolName}.`);
     pdf.save(`${student?.admissionNo ?? "report-card"}-report-card.pdf`);
-  };
-
-  const printSheet = () => {
-    const win = window.open("", "_blank");
-    if (!win) return;
-    const rows = results
-      .map(
-        (r) =>
-          `<tr><td>${r.subject}</td><td>${r.caScore}</td><td>${r.examScore}</td><td>${r.totalScore}</td><td>${r.grade}</td></tr>`
-      )
-      .join("");
-    win.document.write(`
-      <html><head><title>Report card ${student?.admissionNo ?? ""}</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 32px; color: #0f172a; max-width: 720px; margin: 0 auto; }
-        h1 { color: #0284c7; font-size: 22px; margin: 0 0 4px; }
-        .meta { color: #64748b; font-size: 13px; margin-bottom: 16px; }
-        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
-        th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
-        th { background: #f8fafc; }
-        .box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; margin-top: 12px; }
-        .avg { font-size: 18px; font-weight: 700; margin-top: 8px; }
-      </style></head>
-      <body>
-        <h1>${settings.schoolName}</h1>
-        <p class="meta">Official Terminal Report — ${settings.term} · ${settings.session}</p>
-        <p><strong>Name:</strong> ${student?.name ?? "—"} &nbsp; <strong>Admission:</strong> ${student?.admissionNo ?? "—"} &nbsp; <strong>Class:</strong> ${student?.className ?? "—"}</p>
-        <p><strong>Attendance:</strong> ${attendance.percent}%</p>
-        <table>
-          <thead><tr><th>Subject</th><th>CA (${marks.ca})</th><th>Exam (${marks.exam})</th><th>Total (${marks.total})</th><th>Grade</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-        <p class="avg">Overall average: ${average}%</p>
-        <div class="box"><strong>Class teacher's comment</strong><br/>${teacherComment}<br/><em>${teacher}</em></div>
-        <div class="box"><strong>Principal's comment</strong><br/>${principalComment}<br/><em>${principal}</em></div>
-        <p><strong>Next term resumption:</strong> ${resumption}</p>
-        <script>window.onload = function() { window.print(); }</script>
-      </body></html>
-    `);
-    win.document.close();
-    win.focus();
   };
 
   return (
@@ -215,19 +174,12 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
             This is an official record of {settings.schoolName}. {settings.address}.
           </p>
         </div>
-        <div className="flex flex-col gap-2 border-t p-4 sm:flex-row">
+        <div className="border-t p-4">
           <button
             onClick={downloadPdf}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
           >
             <Download className="h-4 w-4" /> Download PDF
-          </button>
-          <button
-            onClick={printSheet}
-            disabled={results.length === 0}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-          >
-            <Printer className="h-4 w-4" /> Print
           </button>
         </div>
       </div>

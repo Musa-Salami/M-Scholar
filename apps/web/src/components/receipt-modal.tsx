@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Printer, X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import type { InvoiceStatus, Payment } from "@m-scholar/shared";
 import { PAYMENT_METHOD_LABELS } from "@m-scholar/shared";
 import { formatCurrency } from "@/lib/utils";
@@ -70,51 +70,6 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
     } finally {
       setBusy(false);
     }
-  };
-
-  const handlePrint = () => {
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(`
-      <html><head><title>Receipt ${payment.receiptNo}</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 40px; max-width: 640px; margin: 0 auto; color: #0f172a; }
-        h1 { margin-bottom: 4px; font-size: 22px; }
-        .meta { color: #64748b; font-size: 13px; margin-bottom: 24px; }
-        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-        td { padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
-        .total { font-size: 16px; font-weight: bold; }
-        .wrap { position: relative; }
-        .stamp { position: absolute; inset: 80px 0 0 0; display: flex; align-items: center; justify-content: center;
-          font-size: 64px; font-weight: 900; letter-spacing: 8px; transform: rotate(-28deg); opacity: 0.16;
-          color: ${stamp.label === "PAID" ? "#059669" : "#d97706"}; pointer-events: none; }
-        .footer { margin-top: 28px; font-size: 12px; color: #64748b; }
-      </style></head>
-      <body>
-        <div class="wrap">
-          <div class="stamp">${stamp.label}</div>
-          <h1>${settings.schoolName}</h1>
-          <p class="meta">Official Fee Payment Receipt · ${stamp.label}</p>
-          <table>
-            <tr><td>Receipt No.</td><td style="text-align:right;font-weight:600">${payment.receiptNo}</td></tr>
-            <tr><td>Invoice No.</td><td style="text-align:right">${invoice?.invoiceNo ?? "—"}</td></tr>
-            <tr><td>Date</td><td style="text-align:right">${new Date(payment.paidAt).toLocaleString()}</td></tr>
-            <tr><td>Student</td><td style="text-align:right">${student?.name ?? "—"}</td></tr>
-            <tr><td>Admission No.</td><td style="text-align:right">${student?.admissionNo ?? "—"}</td></tr>
-            <tr><td>Class</td><td style="text-align:right">${student?.className ?? "—"}</td></tr>
-            <tr><td>Payment Method</td><td style="text-align:right">${PAYMENT_METHOD_LABELS[payment.method]}</td></tr>
-            <tr><td>Reference</td><td style="text-align:right">${payment.reference}</td></tr>
-            <tr><td>Invoice total</td><td style="text-align:right">${formatCurrency(invoice?.totalAmount ?? payment.amount)}</td></tr>
-            <tr><td class="total">Amount paid</td><td class="total" style="text-align:right">${formatCurrency(payment.amount)}</td></tr>
-            <tr><td>Balance remaining</td><td style="text-align:right">${formatCurrency(invoice?.balance ?? 0)}</td></tr>
-          </table>
-          <p class="footer">Received by: ${payment.recordedBy}<br/>${settings.address} · ${settings.phone}</p>
-        </div>
-      </body></html>
-    `);
-    win.document.close();
-    win.focus();
-    win.print();
   };
 
   return (
@@ -200,12 +155,6 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
             className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
           >
             <Download className="h-4 w-4" /> Download PDF
-          </button>
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <Printer className="h-4 w-4" /> Print
           </button>
           <button onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm">
             Close

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Eye, Printer, Search } from "lucide-react";
+import { Download, Eye, Search } from "lucide-react";
 import type { Student } from "@m-scholar/shared";
 import { ReportCardModal } from "@/components/report-card-modal";
 import { useAcademicStore } from "@/lib/academic-store";
@@ -28,10 +28,10 @@ export function StudentResultButtons({ studentId, compact = false }: { studentId
             ? "cursor-not-allowed text-slate-400"
             : "text-sky-700 hover:bg-sky-50"
         }`}
-        title={count === 0 ? "No published results yet" : "Open and print report card"}
+        title={count === 0 ? "No published results yet" : "Download report card PDF"}
       >
-        <Printer className="h-4 w-4" />
-        {compact ? "Print" : "Print result"}
+        <Download className="h-4 w-4" />
+        {compact ? "Download" : "Download result"}
       </button>
       {open && <ReportCardModal studentId={studentId} onClose={() => setOpen(false)} />}
     </>
@@ -99,7 +99,7 @@ export function StudentRecordDetails({ student }: { student: Student }) {
 
 export function StudentLookupPanel({
   title = "Pull student records",
-  description = "Search by name, admission number, class, or parent email. Print a result when it has been published.",
+  description = "Search by name, admission number, class, or parent email. Download a result PDF when it has been published.",
 }: {
   title?: string;
   description?: string;
