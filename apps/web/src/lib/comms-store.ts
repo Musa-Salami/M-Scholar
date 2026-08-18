@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type { ChatMessage, MessageThread, TeacherNote } from "@m-scholar/shared";
 import { addNotification } from "@/lib/notification-store";
 
@@ -71,9 +70,7 @@ interface CommsState {
   getOrCreateThread: (studentId: string, parentEmail: string, teacherName: string, studentName: string, className: string) => MessageThread;
 }
 
-export const useCommsStore = create<CommsState>()(
-  persist(
-    (set, get) => ({
+export const useCommsStore = create<CommsState>()((set, get) => ({
       notes: SEED_NOTES,
       threads: SEED_THREADS,
       messages: SEED_MESSAGES,
@@ -147,7 +144,5 @@ export const useCommsStore = create<CommsState>()(
         set((s) => ({ threads: [...s.threads, thread] }));
         return thread;
       },
-    }),
-    { name: "mscholar-comms" }
-  )
+    })
 );

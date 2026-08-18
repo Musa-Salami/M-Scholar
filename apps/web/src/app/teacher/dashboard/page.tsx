@@ -11,9 +11,11 @@ import { useCommsStore } from "@/lib/comms-store";
 
 export default function TeacherDashboardPage() {
   useRequireAuth(["class_teacher"]);
-  const students = useFinanceStore((s) => s.students.filter((st) => st.className === TEACHER_CLASS));
-  const { registers, termResults } = useAcademicStore();
-  const { notes, messages } = useCommsStore();
+  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.className === TEACHER_CLASS));
+  const registers = useAcademicStore((s) => s.registers ?? []);
+  const termResults = useAcademicStore((s) => s.termResults ?? []);
+  const notes = useCommsStore((s) => s.notes ?? []);
+  const messages = useCommsStore((s) => s.messages ?? []);
 
   const today = new Date().toISOString().slice(0, 10);
   const todayReg = registers.find((r) => r.className === TEACHER_CLASS && r.date === today);

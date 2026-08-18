@@ -23,7 +23,7 @@ const STATUS_COLORS: Record<AttendanceStatus, string> = {
 export default function TeacherAttendancePage() {
   useRequireAuth(["class_teacher"]);
   const { user } = useAuthStore();
-  const students = useFinanceStore((s) => s.students.filter((st) => st.className === TEACHER_CLASS));
+  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.className === TEACHER_CLASS));
   const { getRegister, saveRegister, submitRegister } = useAcademicStore();
 
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));

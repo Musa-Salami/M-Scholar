@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type {
   Assessment,
   AssessmentScore,
@@ -56,9 +55,7 @@ interface AcademicState {
   getAttendanceSummary: (studentId: string) => { present: number; absent: number; late: number; total: number; percent: number };
 }
 
-export const useAcademicStore = create<AcademicState>()(
-  persist(
-    (set, get) => ({
+export const useAcademicStore = create<AcademicState>()((set, get) => ({
       registers: [],
       assessments: SEED_ASSESSMENTS,
       scores: SEED_SCORES,
@@ -230,9 +227,7 @@ export const useAcademicStore = create<AcademicState>()(
         const total = entries.length || 1;
         return { present, absent, late, total, percent: Math.round((present / total) * 100) };
       },
-    }),
-    { name: "mscholar-academic" }
-  )
+    })
 );
 
 export { TEACHER_CLASS, TERM, SUBJECTS };

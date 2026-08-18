@@ -1,7 +1,6 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import type {
   ExpenditureRecord,
   ExpenseCategory,
@@ -21,7 +20,7 @@ const SESSION = "2025/2026";
 const TERM = "First Term";
 
 const SEED_STUDENTS: Student[] = [
-  { id: "s1", admissionNo: "MS-1042", name: "Amina Bello", className: "JSS 2A", parentEmail: "parent@mscholar.app" },
+  { id: "s1", admissionNo: "MS-1042", name: "Amina Bello", className: "JSS 2A", parentEmail: "parent@mscholar.app", studentEmail: "student@mscholar.app" },
   { id: "s2", admissionNo: "MS-1043", name: "Chidi Okafor", className: "JSS 2A", parentEmail: "chidi.parent@email.com" },
   { id: "s3", admissionNo: "MS-1044", name: "Zainab Ibrahim", className: "JSS 1A", parentEmail: "zainab.parent@email.com" },
   { id: "s4", admissionNo: "MS-1045", name: "David Adeyemi", className: "SS 1 Science", parentEmail: "david.parent@email.com" },
@@ -237,9 +236,7 @@ interface FinanceState {
   };
 }
 
-export const useFinanceStore = create<FinanceState>()(
-  persist(
-    (set, get) => ({
+export const useFinanceStore = create<FinanceState>()((set, get) => ({
       students: SEED_STUDENTS,
       feeStructures: SEED_FEE_STRUCTURES,
       invoices: SEED_INVOICES,
@@ -412,15 +409,15 @@ export const useFinanceStore = create<FinanceState>()(
       getPaymentsForInvoice: (invoiceId) => get().payments.filter((p) => p.invoiceId === invoiceId),
       getPaymentsForParent: (email) => {
         const studentIds = new Set(
-          get().students.filter((s) => s.parentEmail === email).map((s) => s.id)
+          get().students.filter((s) => s.parentEmail === email || s.studentEmail === email).map((s) => s.id)
         );
-        return get().payments.filter((p) => studentIds.has(p.studentId));
+        return (get().payments ?? []).filter((p) => studentIds.has(p.studentId));
       },
       getInvoicesForParent: (email) => {
         const studentIds = new Set(
-          get().students.filter((s) => s.parentEmail === email).map((s) => s.id)
+          get().students.filter((s) => s.parentEmail === email || s.studentEmail === email).map((s) => s.id)
         );
-        return get().invoices.filter((i) => studentIds.has(i.studentId));
+        return (get().invoices ?? []).filter((i) => studentIds.has(i.studentId));
       },
 
       stats: () => {
@@ -462,7 +459,5 @@ export const useFinanceStore = create<FinanceState>()(
           netBalance: totalIncome - totalExpenditure,
         };
       },
-    }),
-    { name: "mscholar-finance" }
-  )
+    })
 );

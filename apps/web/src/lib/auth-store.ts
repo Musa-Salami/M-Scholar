@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type { AuthUser } from "@m-scholar/shared";
 import { DEMO_USERS, ROLE_DASHBOARD_PATH } from "@m-scholar/shared";
 
@@ -20,7 +20,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       login: (email, password) => {
-        const entry = DEMO_USERS[email.toLowerCase()];
+        const entry = DEMO_USERS[email.toLowerCase().trim()];
         if (!entry || entry.password !== password) {
           return { ok: false, error: "Invalid email or password." };
         }
@@ -32,10 +32,18 @@ export const useAuthStore = create<AuthState>()(
 
       dashboardPath: () => {
         const user = get().user;
-        if (!user) return "/login";
+        if (!user) return "/login/";
         return ROLE_DASHBOARD_PATH[user.role];
       },
     }),
-    { name: "mscholar-auth" }
+    {
+      name: "mscholar-auth",
+      skipHydration: true,
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
   )
 );

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 export default function TeacherMessagesPage() {
   useRequireAuth(["class_teacher"]);
   const { user } = useAuthStore();
-  const students = useFinanceStore((s) => s.students.filter((st) => st.className === TEACHER_CLASS));
+  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.className === TEACHER_CLASS));
   const { threads, getMessages, sendMessage, getOrCreateThread } = useCommsStore();
   const [activeThread, setActiveThread] = useState(threads[0]?.id ?? "");
   const [body, setBody] = useState("");

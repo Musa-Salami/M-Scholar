@@ -11,7 +11,7 @@ import { useAcademicStore, TEACHER_CLASS, SUBJECTS } from "@/lib/academic-store"
 
 export default function TeacherAssessmentsPage() {
   useRequireAuth(["class_teacher"]);
-  const students = useFinanceStore((s) => s.students.filter((st) => st.className === TEACHER_CLASS));
+  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.className === TEACHER_CLASS));
   const { assessments, setScore, getScoresForAssessment, computeTermResults, termResults, publishResults } = useAcademicStore();
   const [subject, setSubject] = useState<string>(SUBJECTS[0]);
   const [toast, setToast] = useState("");

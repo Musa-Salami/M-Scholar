@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 export default function PortalMessagesPage() {
   useRequireAuth(["parent", "student"]);
   const { user } = useAuthStore();
-  const students = useFinanceStore((s) => s.students.filter((st) => st.parentEmail === user?.email));
+  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.parentEmail === user?.email || st.studentEmail === user?.email));
   const student = students[0];
   const { getThreadForParent, getMessages, sendMessage, getOrCreateThread } = useCommsStore();
   const [body, setBody] = useState("");

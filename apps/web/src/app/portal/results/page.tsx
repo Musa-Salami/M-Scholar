@@ -13,7 +13,7 @@ import { ReportCardModal } from "@/components/report-card-modal";
 export default function PortalResultsPage() {
   useRequireAuth(["parent", "student"]);
   const { user } = useAuthStore();
-  const students = useFinanceStore((s) => s.students.filter((st) => st.parentEmail === user?.email));
+  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.parentEmail === user?.email || st.studentEmail === user?.email));
   const student = students[0];
   const { getResultsForStudent } = useAcademicStore();
   const [showReport, setShowReport] = useState(false);

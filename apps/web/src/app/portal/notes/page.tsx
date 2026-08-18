@@ -19,7 +19,7 @@ const PRIORITY_STYLES: Record<NotePriority, string> = {
 export default function PortalNotesPage() {
   useRequireAuth(["parent", "student"]);
   const { user } = useAuthStore();
-  const students = useFinanceStore((s) => s.students.filter((st) => st.parentEmail === user?.email));
+  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.parentEmail === user?.email || st.studentEmail === user?.email));
   const studentIds = students.map((s) => s.id);
   const { getNotesForParent, markNoteRead } = useCommsStore();
   const notes = getNotesForParent(user?.email ?? "", studentIds);

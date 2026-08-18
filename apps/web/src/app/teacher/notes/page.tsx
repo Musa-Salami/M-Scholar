@@ -22,7 +22,7 @@ const PRIORITY_STYLES: Record<NotePriority, string> = {
 export default function TeacherNotesPage() {
   useRequireAuth(["class_teacher"]);
   const { user } = useAuthStore();
-  const students = useFinanceStore((s) => s.students.filter((st) => st.className === TEACHER_CLASS));
+  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.className === TEACHER_CLASS));
   const { notes, addNote } = useCommsStore();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ studentId: students[0]?.id ?? "", title: "", body: "", priority: "info" as NotePriority });

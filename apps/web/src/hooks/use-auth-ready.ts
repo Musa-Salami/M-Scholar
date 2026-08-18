@@ -3,21 +3,26 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
 
-/** Wait until persisted login state is restored from localStorage. */
+/** Restore login from localStorage only in the browser, after first paint. */
 export function useAuthReady() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const persist = useAuthStore.persist;
-    if (!persist?.hasHydrated) {
-      setReady(true);
-      return;
+    let cancelled = false;
+
+    async function restore() {
+      try {
+        await useAuthStore.persist.rehydrate();
+      } catch {
+        useAuthStore.setState({ user: null, isAuthenticated: false });
+      }
+      if (!cancelled) setReady(true);
     }
-    if (persist.hasHydrated()) {
-      setReady(true);
-      return;
-    }
-    return persist.onFinishHydration(() => setReady(true));
+
+    void restore();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return ready;

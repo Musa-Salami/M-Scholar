@@ -26,6 +26,7 @@ export interface Student {
   name: string;
   className: string;
   parentEmail: string;
+  studentEmail?: string;
 }
 
 export interface Invoice {

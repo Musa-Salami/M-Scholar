@@ -94,7 +94,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
   const { user, logout } = useAuthStore();
   const ready = useAuthReady();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const current = pathname.replace(/\/$/, "") || "/";
+  const current = (pathname ?? "").replace(/\/$/, "") || "/";
 
   if (!ready || !user) {
     return (
@@ -104,7 +104,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
     );
   }
 
-  const accent = ACCENT_STYLES[user.role];
+  const accent = ACCENT_STYLES[user.role] ?? ACCENT_STYLES.parent;
 
   return (
     <div className="flex min-h-screen bg-slate-50">
