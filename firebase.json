@@ -2,15 +2,14 @@
   "hosting": {
     "site": "mscholar",
     "public": "apps/web/out",
+    "cleanUrls": true,
+    "trailingSlash": true,
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "headers": [
       {
         "source": "**/*.@(js|css|woff2|png|jpg|svg|ico|txt)",
         "headers": [{ "key": "Cache-Control", "value": "max-age=31536000" }]
       }
-    ],
-    "rewrites": [
-      { "source": "**", "destination": "/index.html" }
     ]
   }
 }

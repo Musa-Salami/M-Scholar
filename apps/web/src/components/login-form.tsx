@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Lock, Mail, ArrowRight, ArrowLeft } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 import { DEMO_USERS, ROLE_DASHBOARD_PATH, SCHOOL, LOGIN_PORTALS, type LoginPortal, type UserRole } from "@m-scholar/shared";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ interface LoginFormProps {
 
 export function LoginForm({ portal }: LoginFormProps) {
   const router = useRouter();
+  const ready = useAuthReady();
   const { login, isAuthenticated, user, dashboardPath } = useAuthStore();
   const config = LOGIN_PORTALS[portal];
   const accent = ACCENT[portal];
@@ -33,10 +35,11 @@ export function LoginForm({ portal }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!ready) return;
     if (isAuthenticated && user && allowedRoles.includes(user.role)) {
       router.replace(ROLE_DASHBOARD_PATH[user.role]);
     }
-  }, [isAuthenticated, user, allowedRoles, router]);
+  }, [ready, isAuthenticated, user, allowedRoles, router]);
 
   const demoAccounts = Object.entries(DEMO_USERS).filter(([, { user: u }]) =>
     allowedRoles.includes(u.role)

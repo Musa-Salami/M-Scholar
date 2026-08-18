@@ -34,7 +34,7 @@ export function SiteHeader() {
               href={href}
               className={cn(
                 "rounded-lg px-3 py-2 text-sm font-medium transition",
-                pathname === href ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                pathname.replace(/\/$/, "") === href || (href === "/" && pathname === "/") ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               )}
             >
               {label}

@@ -32,6 +32,7 @@ import { ROLE_LABELS } from "@m-scholar/shared";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import { NotificationBell } from "@/components/notification-bell";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 
 const ICONS: Record<string, LucideIcon> = {
   LayoutDashboard,
@@ -91,9 +92,17 @@ interface PortalShellProps {
 export function PortalShell({ navItems, children, title }: PortalShellProps) {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
+  const ready = useAuthReady();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const current = pathname.replace(/\/$/, "") || "/";
 
-  if (!user) return null;
+  if (!ready || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-500">Loading portal…</p>
+      </div>
+    );
+  }
 
   const accent = ACCENT_STYLES[user.role];
 
@@ -115,7 +124,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
         <nav className="flex flex-1 flex-col gap-1 border-r border-slate-200 bg-white p-4">
           {navItems.map((item) => {
             const Icon = ICONS[item.icon] ?? LayoutDashboard;
-            const active = pathname === item.href;
+            const active = current === item.href.replace(/\/$/, "");
             return (
               <Link
                 key={item.href}
