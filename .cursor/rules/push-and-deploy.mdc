@@ -1,0 +1,15 @@
+---
+description: Always commit, push to GitHub, and deploy Firebase Hosting after app changes
+alwaysApply: true
+---
+
+# Push and deploy
+
+After finishing code changes in this repo:
+
+1. Commit the relevant source files (never `.next`, `.env`, or secrets).
+2. `git push` to `origin` on the current branch.
+3. `npm run build` from the repo root, then `npx firebase-tools deploy --only hosting`.
+4. Tell the user the GitHub status and the live URL: https://mscholar.web.app
+
+Do this without waiting to be asked. Skip deploy only if the change is docs/rules with no effect on `apps/web`.
