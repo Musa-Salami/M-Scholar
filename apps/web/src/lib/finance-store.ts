@@ -20,11 +20,67 @@ const SESSION = "2025/2026";
 const TERM = "First Term";
 
 const SEED_STUDENTS: Student[] = [
-  { id: "s1", admissionNo: "MS-1042", name: "Amina Bello", className: "JSS 2A", parentEmail: "parent@mscholar.app", studentEmail: "student@mscholar.app" },
-  { id: "s2", admissionNo: "MS-1043", name: "Chidi Okafor", className: "JSS 2A", parentEmail: "chidi.parent@email.com" },
-  { id: "s3", admissionNo: "MS-1044", name: "Zainab Ibrahim", className: "JSS 1A", parentEmail: "zainab.parent@email.com" },
-  { id: "s4", admissionNo: "MS-1045", name: "David Adeyemi", className: "SS 1 Science", parentEmail: "david.parent@email.com" },
-  { id: "s5", admissionNo: "MS-1046", name: "Blessing Eze", className: "JSS 1A", parentEmail: "blessing.parent@email.com" },
+  {
+    id: "s1",
+    admissionNo: "MS-1042",
+    name: "Amina Bello",
+    className: "JSS 2A",
+    parentEmail: "parent@mscholar.app",
+    studentEmail: "student@mscholar.app",
+    dateOfBirth: "2013-04-12",
+    parentAddress: "14 Adeniran Street, Ikeja, Lagos",
+    parentPhone: "+234 801 555 1042",
+    disability: "None",
+    allergy: "Peanuts",
+  },
+  {
+    id: "s2",
+    admissionNo: "MS-1043",
+    name: "Chidi Okafor",
+    className: "JSS 2A",
+    parentEmail: "chidi.parent@email.com",
+    dateOfBirth: "2013-09-02",
+    parentAddress: "8 Unity Close, Surulere, Lagos",
+    parentPhone: "+234 802 555 1043",
+    disability: "None",
+    allergy: "None",
+  },
+  {
+    id: "s3",
+    admissionNo: "MS-1044",
+    name: "Zainab Ibrahim",
+    className: "JSS 1A",
+    parentEmail: "zainab.parent@email.com",
+    dateOfBirth: "2014-01-20",
+    parentAddress: "22 Ahmadu Bello Way, Kaduna",
+    parentPhone: "+234 803 555 1044",
+    disability: "None",
+    allergy: "Dust",
+  },
+  {
+    id: "s4",
+    admissionNo: "MS-1045",
+    name: "David Adeyemi",
+    className: "SS 1 Science",
+    parentEmail: "david.parent@email.com",
+    dateOfBirth: "2011-06-15",
+    parentAddress: "5 Ring Road, Ibadan",
+    parentPhone: "+234 804 555 1045",
+    disability: "None",
+    allergy: "None",
+  },
+  {
+    id: "s5",
+    admissionNo: "MS-1046",
+    name: "Blessing Eze",
+    className: "JSS 1A",
+    parentEmail: "blessing.parent@email.com",
+    dateOfBirth: "2014-11-08",
+    parentAddress: "11 New Haven, Enugu",
+    parentPhone: "+234 805 555 1046",
+    disability: "None",
+    allergy: "None",
+  },
 ];
 
 const SEED_FEE_STRUCTURES: FeeStructure[] = [
@@ -68,6 +124,37 @@ const SEED_FEE_STRUCTURES: FeeStructure[] = [
     totalAmount: 150000,
   },
 ];
+
+const STUDENTS_KEY = "mscholar-students";
+
+function persistStudents(students: Student[]) {
+  try {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+  } catch {
+    /* ignore */
+  }
+}
+
+function readStoredStudents(): Student[] | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const raw = window.localStorage.getItem(STUDENTS_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as Student[];
+    if (!Array.isArray(data)) return null;
+    return data.map((s) => ({
+      ...s,
+      dateOfBirth: s.dateOfBirth ?? "",
+      parentAddress: s.parentAddress ?? "",
+      parentPhone: s.parentPhone ?? "",
+      disability: s.disability ?? "None",
+      allergy: s.allergy ?? "None",
+    }));
+  } catch {
+    return null;
+  }
+}
 
 function invoiceNo(seq: number) {
   return `INV-${new Date().getFullYear()}-${String(seq).padStart(4, "0")}`;
@@ -207,6 +294,9 @@ interface FinanceState {
   receiptSeq: number;
 
   addFeeStructure: (data: Omit<FeeStructure, "id" | "totalAmount">) => void;
+  addStudent: (data: Omit<Student, "id">) => void;
+  updateStudent: (id: string, data: Omit<Student, "id">) => void;
+  restoreStudents: () => void;
   generateInvoices: (feeStructureId: string) => number;
   recordPayment: (data: {
     invoiceId: string;
@@ -247,6 +337,27 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
       payrollRuns: [],
       invoiceSeq: 5,
       receiptSeq: 4,
+
+      restoreStudents: () => {
+        const stored = readStoredStudents();
+        if (stored) set({ students: stored });
+      },
+
+      addStudent: (data) => {
+        set((s) => {
+          const students = [...s.students, { ...data, id: `s${Date.now()}` }];
+          persistStudents(students);
+          return { students };
+        });
+      },
+
+      updateStudent: (id, data) => {
+        set((s) => {
+          const students = s.students.map((st) => (st.id === id ? { ...st, ...data } : st));
+          persistStudents(students);
+          return { students };
+        });
+      },
 
       addFeeStructure: (data) => {
         const totalAmount = data.items.reduce((s, i) => s + i.amount, 0);
