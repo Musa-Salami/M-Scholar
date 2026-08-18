@@ -1,12 +1,14 @@
-name: Deploy to Firebase Hosting
+name: CI
 
 on:
   push:
     branches: [main]
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+    env:
+      FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MSCHOLAR }}
     steps:
       - uses: actions/checkout@v4
 
@@ -18,7 +20,13 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      # Skipped until this repo secret is set. Create it from Firebase:
+      # Project settings → Service accounts → Generate new private key,
+      # then GitHub → Settings → Secrets and variables → Actions →
+      # FIREBASE_SERVICE_ACCOUNT_MSCHOLAR (paste the full JSON).
+      - name: Deploy to Firebase Hosting
+        if: ${{ env.FIREBASE_SA != '' }}
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MSCHOLAR }}
