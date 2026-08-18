@@ -1,0 +1,1298 @@
+================================================================================
+  M-SCHOLAR — COMPLETE TECHNICAL SPECIFICATION
+  School Management System (SMS)
+  Version: 1.0.0
+  Document Date: August 17, 2026
+  Target Deployment: Firebase Hosting → https://mscholar.web.app
+  Repository: GitHub (M-Scholar dedicated repo)
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+  1.  Executive Summary
+  2.  System Goals & Scope
+  3.  User Roles & Permissions Matrix
+  4.  High-Level Architecture
+  5.  Recommended Technology Stack
+  6.  UI/UX Design System & Interaction Patterns
+  7.  Module Specifications by Portal
+  8.  Database Schema (PostgreSQL / Firestore Hybrid Option)
+  9.  REST & Real-Time API Specification
+  10. Authentication, Authorization & Security
+  11. Process Flowcharts & Diagrams
+  12. File Storage, Receipts & Report Generation
+  13. Notifications & Messaging
+  14. Firebase Hosting & Deployment Architecture
+  15. GitHub Repository Structure & CI/CD Pipeline
+  16. Development Phases & Milestones
+  17. Non-Functional Requirements
+  18. Testing Strategy
+  19. Appendix: Sample Environment Variables
+  20. Appendix: Glossary
+
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+M-Scholar is a multi-tenant school management platform designed for primary and
+secondary schools. It provides four role-based portals:
+
+  • Super Admin       — Full system governance, user provisioning, school config
+  • Account Officer   — Finance: income, expenditure, fees, payroll
+  • Class Teacher     — Academic ops: attendance, assessments, parent notes
+  • Parent / Student  — Read-only academic & financial visibility + messaging
+
+The system must feel like a premium, highly interactive web application with
+fast navigation, real-time updates, polished dashboards, and mobile-responsive
+layouts. Backend services expose secure APIs; the frontend is a modern SPA/SSR
+app deployed to Firebase Hosting with Cloud Functions or a containerized API.
+
+
+================================================================================
+2. SYSTEM GOALS & SCOPE
+================================================================================
+
+IN SCOPE
+--------
+  ✓ Multi-role authentication with strict RBAC
+  ✓ Student information management (profiles, classes, sessions/terms)
+  ✓ Fee structures, invoicing, payments, receipts, arrears tracking
+  ✓ Income & expenditure ledger with categories and audit trail
+  ✓ Staff salary management and payslip generation
+  ✓ Daily class attendance register with analytics
+  ✓ Continuous Assessment (CA) + end-of-term results
+  ✓ Teacher-to-parent notes per student
+  ✓ Parent/student portal: attendance, fees, results, notes, messaging
+  ✓ PDF/Excel export for receipts, report cards, financial reports
+  ✓ In-app + email notifications
+  ✓ Super Admin audit logs for all critical actions
+
+OUT OF SCOPE (Phase 1 — defer to Phase 2+)
+--------------------------------------------
+  ✗ Full LMS (lesson plans, video courses)
+  ✗ Biometric/hardware attendance devices (API hooks reserved)
+  ✗ Multi-school SaaS billing (architecture supports future tenancy)
+  ✗ Mobile native apps (responsive PWA is Phase 1 target)
+
+
+================================================================================
+3. USER ROLES & PERMISSIONS MATRIX
+================================================================================
+
+ROLE DEFINITIONS (per client requirements)
+------------------------------------------
+
+┌─────────────────┬────────────────────────────────────────────────────────────┐
+│ ROLE            │ DEFINITION                                                 │
+├─────────────────┼────────────────────────────────────────────────────────────┤
+│ Super Admin     │ Manages all officers; creates login profiles for teachers, │
+│                 │ account officers, and parent/student portal users. Controls│
+│                 │ school-wide settings, academic calendar, classes, subjects.│
+├─────────────────┼────────────────────────────────────────────────────────────┤
+│ Account Officer │ Manages all financial activities: income, expenditure,     │
+│                 │ student fee payments, staff salary, financial reporting.   │
+├─────────────────┼────────────────────────────────────────────────────────────┤
+│ Class Teacher   │ Manages in-school academic activities for assigned class(es)│
+│                 │ Leave notes to parents, maintain attendance register,      │
+│                 │ record CA and term assessment results.                     │
+├─────────────────┼────────────────────────────────────────────────────────────┤
+│ Parent / Student│ View student activities, attendance, fee status & dues,    │
+│                 │ download payment receipts, view results/performance, read  │
+│                 │ teacher notes, communicate with class teacher.             │
+└─────────────────┴────────────────────────────────────────────────────────────┘
+
+PERMISSIONS MATRIX (CRUD = Create, Read, Update, Delete)
+--------------------------------------------------------
+
+Feature / Resource          │ Super │ Account │ Class  │ Parent/
+                            │ Admin │ Officer │ Teacher│ Student
+────────────────────────────┼───────┼─────────┼────────┼─────────
+User account management     │ CRUD  │   —     │   —    │   —
+School settings & calendar  │ CRUD  │   R     │   R    │   R
+Classes & subjects setup    │ CRUD  │   R     │   R    │   R
+Student enrollment          │ CRUD  │   R     │   R    │   R (own)
+Staff records               │ CRUD  │   R     │   R    │   —
+Fee structure & invoices    │ CRUD  │  CRUD   │   R    │   R (own)
+Record fee payments         │ CRUD  │  CRUD   │   —    │   —
+Download fee receipts       │   R   │  CRUD   │   —    │   R (own)
+Income / expenditure        │ CRUD  │  CRUD   │   —    │   —
+Staff salary & payslips     │ CRUD  │  CRUD   │   —    │   —
+Attendance register         │ CRUD  │   R     │ CRUD*  │   R (own)
+Teacher notes to parents    │   R   │   —     │ CRUD*  │   R (own)
+CA & term results           │ CRUD  │   —     │ CRUD*  │   R (own)
+Messaging (teacher↔parent)  │   R   │   —     │  CRU   │   CRU
+Financial reports export    │   R   │  CRUD   │   —    │   —
+Audit logs                  │   R   │   —     │   —    │   —
+Dashboard analytics         │   R   │   R     │   R    │   R (own)
+
+* Scoped to teacher's assigned class(es) and subjects only.
+
+
+================================================================================
+4. HIGH-LEVEL ARCHITECTURE
+================================================================================
+
+ARCHITECTURE DIAGRAM (Logical Layers)
+-------------------------------------
+
+    ┌─────────────────────────────────────────────────────────────────────┐
+    │                        CLIENT LAYER (Browser / PWA)                   │
+    │  Next.js 15 App Router │ React 19 │ Tailwind │ shadcn/ui │ Recharts │
+    │  Role-based layouts: /admin │ /finance │ /teacher │ /portal         │
+    └───────────────────────────────┬─────────────────────────────────────┘
+                                    │ HTTPS (REST + WebSocket/SSE)
+    ┌───────────────────────────────▼─────────────────────────────────────┐
+    │                     API GATEWAY / BFF LAYER                          │
+    │  Firebase Cloud Functions OR Node.js (NestJS) on Cloud Run           │
+    │  Rate limiting │ JWT validation │ Request logging │ CORS             │
+    └───────────────────────────────┬─────────────────────────────────────┘
+                                    │
+         ┌──────────────────────────┼──────────────────────────┐
+         ▼                          ▼                          ▼
+    ┌─────────────┐           ┌─────────────┐           ┌─────────────┐
+    │ Auth Service│           │ Core SMS    │           │ Notification│
+    │ Firebase    │           │ Business    │           │ Service     │
+    │ Auth + RBAC │           │ Logic       │           │ FCM + Email │
+    └─────────────┘           └──────┬──────┘           └─────────────┘
+                                     │
+         ┌───────────────────────────┼───────────────────────────┐
+         ▼                           ▼                           ▼
+    ┌─────────────┐           ┌─────────────┐           ┌─────────────┐
+    │ PostgreSQL  │           │ Firestore   │           │ Cloud       │
+    │ (primary    │           │ (real-time  │           │ Storage     │
+    │  relational)│           │  messaging, │           │ (PDFs,      │
+    │             │           │  presence)  │           │  exports)   │
+    └─────────────┘           └─────────────┘           └─────────────┘
+
+RECOMMENDED DEPLOYMENT TOPOLOGY (Firebase-centric)
+--------------------------------------------------
+
+  GitHub Repo (main)
+       │
+       ▼
+  GitHub Actions CI/CD
+       │
+       ├── Build Next.js static/SSR export → Firebase Hosting (mscholar.web.app)
+       ├── Deploy Cloud Functions (API)
+       ├── Deploy Firestore rules & indexes
+       └── Run automated tests
+
+  Firebase Project ID: mscholar (or mscholar-prod)
+  Hosting site: mscholar.web.app
+  Custom domain (optional later): portal.yourschool.edu.ng
+
+
+================================================================================
+5. RECOMMENDED TECHNOLOGY STACK
+================================================================================
+
+FRONTEND (Highly Interactive, Beautiful UI)
+-------------------------------------------
+  Framework       : Next.js 15 (App Router, Server Components where beneficial)
+  Language        : TypeScript 5.x (strict mode)
+  Styling         : Tailwind CSS 4 + CSS variables for theming
+  Component Lib   : shadcn/ui (Radix primitives) — accessible, customizable
+  Icons           : Lucide React
+  Charts          : Recharts + Tremor for dashboard KPI cards
+  Forms           : React Hook Form + Zod validation
+  Tables          : TanStack Table v8 (sorting, filtering, pagination)
+  State           : Zustand (client UI state) + TanStack Query (server cache)
+  Animations      : Framer Motion (page transitions, micro-interactions)
+  Date/Time       : date-fns + timezone support (school locale)
+  PDF Generation  : @react-pdf/renderer (client) + Puppeteer (server reports)
+  PWA             : next-pwa for offline attendance draft (teacher)
+
+BACKEND
+-------
+  Option A (Firebase-native — recommended for mscholar.web.app):
+    • Firebase Authentication (email/password + optional Google SSO for staff)
+    • Cloud Functions for Firebase (Node.js 20, TypeScript)
+    • Firestore for messaging threads & notification fan-out
+    • Cloud Storage for receipts, report cards, exports
+    • Firebase Admin SDK for custom claims (roles)
+
+  Option B (Enterprise scale):
+    • NestJS 11 REST API
+    • PostgreSQL 16 + Prisma ORM
+    • Redis for session cache & job queues
+    • BullMQ for async PDF/email jobs
+    • Deploy API on Cloud Run; frontend still on Firebase Hosting
+
+  RECOMMENDATION: Start Option A for speed; abstract data layer so PostgreSQL
+  can be introduced when transaction volume exceeds Firestore comfort zone.
+
+DATABASE
+--------
+  Primary (relational data): PostgreSQL via Supabase OR Neon OR Cloud SQL
+  Real-time layer: Firestore collections for messages, notifications
+  ORM: Prisma (if PostgreSQL) / Firebase Admin SDK (if Firestore-first)
+
+DEVOPS & QUALITY
+----------------
+  Version Control : GitHub (dedicated M-Scholar repository)
+  CI/CD           : GitHub Actions
+  Hosting         : Firebase Hosting → mscholar.web.app
+  Monitoring      : Firebase Performance + Sentry
+  Logging         : Cloud Logging + structured JSON logs
+  Secrets         : GitHub Secrets + Firebase Functions config / Secret Manager
+
+
+================================================================================
+6. UI/UX DESIGN SYSTEM & INTERACTION PATTERNS
+================================================================================
+
+DESIGN PHILOSOPHY
+-----------------
+  • Clean, trustworthy, education-focused aesthetic
+  • Role-colored accent themes for instant portal recognition
+  • Data-dense dashboards that remain scannable (card KPIs + drill-down tables)
+  • Mobile-first for parents; desktop-optimized for admin/finance staff
+
+COLOR PALETTE (Design Tokens)
+-----------------------------
+  Primary (Brand)     : #2563EB (Blue 600) — trust, education
+  Super Admin accent  : #7C3AED (Violet 600)
+  Finance accent      : #059669 (Emerald 600)
+  Teacher accent      : #D97706 (Amber 600)
+  Parent portal accent: #0EA5E9 (Sky 500)
+  Success             : #16A34A
+  Warning             : #CA8A04
+  Danger              : #DC2626
+  Neutral background  : #F8FAFC (slate-50)
+  Surface / cards     : #FFFFFF with subtle shadow (shadow-sm)
+  Text primary        : #0F172A (slate-900)
+  Text secondary      : #64748B (slate-500)
+
+TYPOGRAPHY
+----------
+  Headings : "Plus Jakarta Sans" or "Inter" — geometric, modern
+  Body     : "Inter" 16px base, 1.5 line-height
+  Monospace: "JetBrains Mono" for receipt numbers, IDs
+
+LAYOUT PATTERNS
+---------------
+  • Persistent sidebar navigation (collapsible on mobile → bottom tab bar)
+  • Top bar: global search, notification bell, profile menu
+  • Breadcrumbs on nested admin pages
+  • Skeleton loaders (not spinners) for table data
+  • Optimistic UI for attendance tick marks and message send
+  • Toast notifications (Sonner) for success/error feedback
+  • Modal drawers (Sheet component) for quick edits without page leave
+  • Empty states with illustration + primary CTA
+
+KEY SCREENS BY PORTAL
+---------------------
+
+SUPER ADMIN
+  Dashboard     : Total students, staff, fee collection %, attendance avg
+  Users         : Data table with role badges, invite/reset password actions
+  Academic Setup: Sessions, terms, classes, subjects, class-teacher assignment
+  Students      : Enrollment wizard (multi-step), bulk CSV import
+  Audit Log     : Filterable timeline of critical changes
+
+ACCOUNT OFFICER
+  Dashboard     : Revenue vs expenditure chart, outstanding fees, payroll due
+  Fees          : Fee structures, invoice generator, payment recording form
+  Payments      : Searchable ledger, receipt preview & download
+  Income/Expense: Double-entry simplified ledger with categories
+  Payroll       : Staff list, salary components, payslip batch generate
+  Reports       : Export P&L, fee collection, aging receivables
+
+CLASS TEACHER
+  Dashboard     : Today's class, absent count, pending assessments
+  Register      : Grid view — student photos/avatars, present/absent/late toggle
+  Assessments   : CA score entry grid; term result computation preview
+  Notes         : Per-student note composer with read-receipt tracking
+  Messages      : Inbox with parent threads, unread badges
+
+PARENT / STUDENT
+  Dashboard     : Child selector (if multiple), attendance %, fee balance
+  Attendance    : Calendar heatmap (green/yellow/red days)
+  Fees          : Invoice list, pay-now link (future gateway), download receipts
+  Results       : Term report card view + PDF download
+  Notes         : Timeline of teacher notes
+  Messages      : Chat-style thread with assigned class teacher
+
+
+================================================================================
+7. MODULE SPECIFICATIONS BY PORTAL
+================================================================================
+
+7.1 SUPER ADMIN MODULE
+----------------------
+
+7.1.1 User Management
+  • Create user with: full name, email, phone, role, optional class assignment
+  • Auto-generate temporary password; force change on first login
+  • Link Parent user to one or more Student records
+  • Link Teacher user to Class(es) and Subject(s)
+  • Deactivate/reactivate accounts (soft delete)
+  • Bulk import teachers via CSV template
+
+7.1.2 School Configuration
+  • School profile: name, logo, address, motto, contact
+  • Academic session (e.g., 2025/2026) with start/end dates
+  • Terms (1st, 2nd, 3rd) with CA weighting config (e.g., CA1 10%, CA2 10%,
+    Exam 80%)
+  • Grading scale (A=70-100, B=60-69, etc.)
+  • Working days & holidays calendar
+
+7.1.3 Class & Subject Management
+  • CRUD classes (e.g., JSS 1A, SS 2 Science)
+  • CRUD subjects with codes
+  • Assign class teacher and subject teachers
+
+7.1.4 Student Enrollment
+  • Student profile: admission no, name, DOB, gender, photo, class, guardian
+  • Guardian contact for parent portal linking
+  • Promote students to next class (bulk at session end)
+  • Transfer / withdraw workflow
+
+7.1.5 System Audit
+  • Log: who, what, when, IP, before/after snapshot (JSON diff)
+  • Export audit log CSV
+
+
+7.2 ACCOUNT OFFICER MODULE
+--------------------------
+
+7.2.1 Fee Management
+  • Define fee categories: Tuition, PTA, Uniform, Exam, Transport, etc.
+  • Fee structure per class/session/term
+  • Optional discounts & scholarships per student
+  • Auto-generate invoices at term start
+  • Payment methods: Cash, Bank Transfer, POS, Online (Phase 2)
+
+7.2.2 Payment Recording
+  • Record payment against invoice (partial payments supported)
+  • Auto-generate unique receipt number: MSCH-{YYYY}-{SEQ}
+  • Print/download PDF receipt with school logo & payment breakdown
+  • Send receipt email to parent (optional toggle)
+
+7.2.3 Income & Expenditure
+  • Income sources: fees, donations, grants, other
+  • Expenditure categories: salaries, utilities, supplies, maintenance
+  • Attach supporting documents (scanned vouchers)
+  • Running balance & monthly summaries
+
+7.2.4 Staff Payroll
+  • Staff record: employee ID, designation, bank details, salary grade
+  • Salary components: basic, allowances, deductions (tax, pension)
+  • Monthly payroll run → generates payslips (PDF)
+  • Mark as paid; integrate with expenditure ledger
+
+7.2.5 Financial Reports
+  • Fee collection report (by class, term, date range)
+  • Outstanding balances / debtors list
+  • Income vs expenditure statement
+  • Payroll summary
+  • Export: PDF, Excel (xlsx)
+
+
+7.3 CLASS TEACHER MODULE
+------------------------
+
+7.3.1 Attendance Register
+  • Select class + date (default today)
+  • Mark each student: Present | Absent | Late | Excused
+  • Optional reason field for absence
+  • Submit register (locks after submission; admin can unlock)
+  • View historical attendance & export class report
+  • Analytics: chronic absenteeism flags (>3 consecutive absences)
+
+7.3.2 Assessment & Results
+  • Define CA components per subject (CA1, CA2, CA3, Assignment)
+  • Score entry: max score validation, auto-percentage
+  • Term exam score entry
+  • Auto-compute total, grade, position in class (optional)
+  • Publish results (draft → published); parents see only published
+  • Generate report card PDF (school template)
+
+7.3.3 Parent Notes
+  • Create note: student, title, body, priority (info/warning/urgent)
+  • Optional attachment (photo of homework, behavior incident)
+  • Parent receives notification; read status tracked
+  • Notes immutable after 24h (edit window); audit trail preserved
+
+7.3.4 Messaging
+  • Thread per parent-student pair (scoped to class teacher)
+  • Real-time message delivery (Firestore listeners)
+  • File attachment support (max 5MB)
+  • School hours policy banner (configurable by admin)
+
+
+7.4 PARENT / STUDENT MODULE
+---------------------------
+
+7.4.1 Dashboard
+  • Student summary card: photo, class, class teacher name
+  • Quick stats: attendance %, fee balance, latest result grade
+  • Recent teacher notes & unread messages
+
+7.4.2 Attendance View
+  • Monthly calendar with status colors
+  • Summary: days present, absent, late
+
+7.4.3 Fees & Payments
+  • List invoices: amount, paid, balance, due date, status badge
+  • Download receipt PDF for each completed payment
+  • Payment history timeline
+
+7.4.4 Results & Performance
+  • View CA breakdown and term results per subject
+  • Trend chart across terms (if historical data exists)
+  • Download official report card PDF
+
+7.4.5 Teacher Notes
+  • Chronological feed with priority indicators
+  • Mark as read
+
+7.4.6 Communication
+  • Message class teacher (single thread)
+  • Push/email notification on teacher reply
+
+
+================================================================================
+8. DATABASE SCHEMA
+================================================================================
+
+ENTITY RELATIONSHIP OVERVIEW (PostgreSQL / Prisma models)
+---------------------------------------------------------
+
+  schools ──┬── academic_sessions ── terms
+              ├── classes ── class_subjects ── subjects
+              ├── users (all roles)
+              ├── students ── student_guardians ── users(parents)
+              ├── staff
+              ├── fee_structures ── fee_items
+              ├── invoices ── invoice_items ── payments ── receipts
+              ├── income_records
+              ├── expenditure_records
+              ├── payroll_runs ── payslips
+              ├── attendance_registers ── attendance_records
+              ├── assessments ── assessment_scores
+              ├── term_results
+              ├── teacher_notes
+              ├── message_threads ── messages
+              └── audit_logs
+
+CORE TABLE DEFINITIONS (abbreviated — implement via Prisma schema)
+-----------------------------------------------------------------
+
+users
+  id              UUID PK
+  email           VARCHAR UNIQUE NOT NULL
+  password_hash   VARCHAR (or Firebase UID reference)
+  role            ENUM(super_admin, account_officer, class_teacher, parent, student)
+  first_name      VARCHAR
+  last_name       VARCHAR
+  phone           VARCHAR
+  avatar_url      VARCHAR
+  is_active       BOOLEAN DEFAULT true
+  must_change_pw  BOOLEAN DEFAULT false
+  created_at      TIMESTAMPTZ
+  updated_at      TIMESTAMPTZ
+
+students
+  id              UUID PK
+  admission_no    VARCHAR UNIQUE
+  first_name      VARCHAR
+  last_name       VARCHAR
+  date_of_birth   DATE
+  gender          ENUM(male, female, other)
+  photo_url       VARCHAR
+  class_id        UUID FK → classes
+  session_id      UUID FK → academic_sessions
+  status          ENUM(active, graduated, withdrawn, transferred)
+  created_at      TIMESTAMPTZ
+
+student_guardians
+  id              UUID PK
+  student_id      UUID FK
+  parent_user_id  UUID FK → users
+  relationship    VARCHAR (father, mother, guardian)
+  is_primary      BOOLEAN
+
+classes
+  id              UUID PK
+  name            VARCHAR (e.g., "JSS 1A")
+  session_id      UUID FK
+  class_teacher_id UUID FK → users (nullable)
+
+attendance_registers
+  id              UUID PK
+  class_id        UUID FK
+  date            DATE
+  taken_by        UUID FK → users
+  status          ENUM(draft, submitted, locked)
+  UNIQUE(class_id, date)
+
+attendance_records
+  id              UUID PK
+  register_id     UUID FK
+  student_id      UUID FK
+  status          ENUM(present, absent, late, excused)
+  note            TEXT
+
+fee_structures
+  id              UUID PK
+  session_id      UUID FK
+  term_id         UUID FK
+  class_id        UUID FK
+  name            VARCHAR
+  total_amount    DECIMAL(12,2)
+
+invoices
+  id              UUID PK
+  invoice_no      VARCHAR UNIQUE
+  student_id      UUID FK
+  fee_structure_id UUID FK
+  total_amount    DECIMAL(12,2)
+  amount_paid     DECIMAL(12,2) DEFAULT 0
+  balance         DECIMAL(12,2) GENERATED
+  status          ENUM(pending, partial, paid, overdue, waived)
+  due_date        DATE
+
+payments
+  id              UUID PK
+  invoice_id      UUID FK
+  amount          DECIMAL(12,2)
+  method          ENUM(cash, transfer, pos, online)
+  reference       VARCHAR
+  recorded_by     UUID FK → users
+  paid_at         TIMESTAMPTZ
+
+receipts
+  id              UUID PK
+  payment_id      UUID FK UNIQUE
+  receipt_no      VARCHAR UNIQUE
+  pdf_url         VARCHAR
+  issued_at       TIMESTAMPTZ
+
+assessments
+  id              UUID PK
+  class_id        UUID FK
+  subject_id      UUID FK
+  term_id         UUID FK
+  name            VARCHAR (CA1, CA2, Exam)
+  max_score       DECIMAL(6,2)
+  weight_percent  DECIMAL(5,2)
+
+assessment_scores
+  id              UUID PK
+  assessment_id   UUID FK
+  student_id      UUID FK
+  score           DECIMAL(6,2)
+  entered_by      UUID FK → users
+  UNIQUE(assessment_id, student_id)
+
+term_results
+  id              UUID PK
+  student_id      UUID FK
+  subject_id      UUID FK
+  term_id         UUID FK
+  total_score     DECIMAL(6,2)
+  grade           VARCHAR
+  position        INT
+  status          ENUM(draft, published)
+  published_at    TIMESTAMPTZ
+
+teacher_notes
+  id              UUID PK
+  student_id      UUID FK
+  teacher_id      UUID FK → users
+  title           VARCHAR
+  body            TEXT
+  priority        ENUM(info, warning, urgent)
+  read_at         TIMESTAMPTZ (nullable)
+  created_at      TIMESTAMPTZ
+
+message_threads
+  id              UUID PK
+  student_id      UUID FK
+  parent_id       UUID FK → users
+  teacher_id      UUID FK → users
+  last_message_at TIMESTAMPTZ
+
+messages
+  id              UUID PK
+  thread_id       UUID FK
+  sender_id       UUID FK → users
+  body            TEXT
+  attachment_url  VARCHAR
+  read_at         TIMESTAMPTZ
+  created_at      TIMESTAMPTZ
+
+audit_logs
+  id              UUID PK
+  actor_id        UUID FK → users
+  action          VARCHAR
+  entity_type     VARCHAR
+  entity_id       UUID
+  metadata        JSONB
+  ip_address      INET
+  created_at      TIMESTAMPTZ
+
+FIRESTORE COLLECTIONS (real-time complement)
+--------------------------------------------
+  /threads/{threadId}/messages/{messageId}   — live chat
+  /notifications/{userId}/items/{notifId}    — push fan-out
+  /presence/{userId}                         — online status (optional)
+
+
+================================================================================
+9. REST & REAL-TIME API SPECIFICATION
+================================================================================
+
+BASE URL: https://api.mscholar.web.app/v1  (Cloud Functions or Cloud Run)
+AUTH: Bearer JWT (Firebase ID token) + custom claims { role, schoolId }
+
+AUTHENTICATION
+--------------
+  POST   /auth/login              { email, password } → { token, user, role }
+  POST   /auth/logout
+  POST   /auth/forgot-password    { email }
+  POST   /auth/reset-password     { token, newPassword }
+  GET    /auth/me                   → current user profile
+
+SUPER ADMIN — USERS
+-------------------
+  GET    /users                     ?role=&page=&search=
+  POST   /users                     Create user + role assignment
+  GET    /users/:id
+  PATCH  /users/:id                 Update profile / deactivate
+  POST   /users/:id/reset-password  Admin-triggered reset
+  POST   /users/bulk-import         CSV upload
+
+SUPER ADMIN — ACADEMIC
+----------------------
+  CRUD   /sessions
+  CRUD   /sessions/:id/terms
+  CRUD   /classes
+  CRUD   /subjects
+  POST   /classes/:id/assign-teacher
+
+SUPER ADMIN — STUDENTS
+----------------------
+  GET    /students                  ?classId=&sessionId=&search=
+  POST   /students
+  GET    /students/:id
+  PATCH  /students/:id
+  POST   /students/:id/guardians    Link parent user
+  POST   /students/promote          Bulk promote to next class
+
+FINANCE — FEES & PAYMENTS
+-------------------------
+  CRUD   /fee-structures
+  GET    /invoices                  ?studentId=&status=&termId=
+  POST   /invoices/generate         Bulk generate for class/term
+  POST   /payments                  Record payment → auto receipt
+  GET    /payments/:id/receipt      PDF stream
+  GET    /reports/fees              ?format=pdf|xlsx
+
+FINANCE — LEDGER & PAYROLL
+--------------------------
+  CRUD   /income
+  CRUD   /expenditure
+  GET    /reports/financial-summary
+  CRUD   /staff
+  POST   /payroll/run               { month, year }
+  GET    /payroll/:runId/payslips
+
+TEACHER — ATTENDANCE
+--------------------
+  GET    /attendance/register       ?classId=&date=
+  POST   /attendance/register       Create/update register + records
+  POST   /attendance/register/submit  Lock register
+  GET    /attendance/report         ?classId=&from=&to=
+
+TEACHER — ASSESSMENTS
+---------------------
+  CRUD   /assessments               Scoped to teacher's subjects
+  POST   /assessments/:id/scores    Bulk score entry [{studentId, score}]
+  GET    /term-results              ?classId=&termId=
+  POST   /term-results/publish      Publish to parent portal
+
+TEACHER — NOTES & MESSAGES
+--------------------------
+  CRUD   /notes                     ?studentId=
+  GET    /messages/threads
+  GET    /messages/threads/:id
+  POST   /messages/threads/:id/messages
+
+PARENT PORTAL (scoped to linked students)
+-----------------------------------------
+  GET    /portal/students           List linked children
+  GET    /portal/students/:id/dashboard
+  GET    /portal/students/:id/attendance
+  GET    /portal/students/:id/fees
+  GET    /portal/students/:id/results
+  GET    /portal/students/:id/notes
+  GET    /portal/students/:id/messages
+
+WEBSOCKET / SSE
+---------------
+  WS     /realtime/notifications    User notification stream
+  Firestore listeners for message threads (client SDK)
+
+
+================================================================================
+10. AUTHENTICATION, AUTHORIZATION & SECURITY
+================================================================================
+
+AUTH FLOW
+---------
+  1. User submits credentials on /login
+  2. Firebase Auth validates; Cloud Function sets custom claims on first login
+  3. Frontend reads claims → redirects to role dashboard:
+       super_admin    → /admin/dashboard
+       account_officer→ /finance/dashboard
+       class_teacher  → /teacher/dashboard
+       parent/student → /portal/dashboard
+  4. API middleware validates JWT on every request
+  5. RBAC middleware checks role + resource ownership (e.g., parent → own child)
+
+SECURITY CONTROLS
+-----------------
+  ✓ HTTPS only (Firebase Hosting enforces TLS)
+  ✓ Password policy: min 8 chars, complexity rules
+  ✓ Rate limiting on auth endpoints (100 req/min/IP)
+  ✓ CSRF protection on cookie-based flows (if used)
+  ✓ Input validation via Zod on client + server
+  ✓ SQL injection prevention via parameterized queries (Prisma)
+  ✓ Firestore security rules: users read only their threads/notifications
+  ✓ File upload: type whitelist (pdf, jpg, png), virus scan (Cloud Storage)
+  ✓ Audit log for all financial and grade mutations
+  ✓ PII encryption at rest (Cloud SQL/Firestore default)
+  ✓ Session timeout: 30 min idle (configurable)
+  ✓ 2FA optional for Super Admin (Firebase MFA — Phase 2)
+
+FIRESTORE SECURITY RULES (sketch)
+---------------------------------
+  match /threads/{threadId}/messages/{msgId} {
+    allow read, write: if request.auth != null &&
+      (request.auth.uid in resource.data.participants);
+  }
+
+
+================================================================================
+11. PROCESS FLOWCHARTS & DIAGRAMS
+================================================================================
+
+11.1 SYSTEM AUTHENTICATION & ROLE ROUTING
+-----------------------------------------
+
+                        ┌──────────────┐
+                        │  User opens  │
+                        │ mscholar.app │
+                        └──────┬───────┘
+                               │
+                               ▼
+                        ┌──────────────┐
+                        │ Login Screen │
+                        │ email + pwd  │
+                        └──────┬───────┘
+                               │
+                               ▼
+                     ┌─────────────────┐
+                     │ Firebase Auth   │
+                     │ verify creds    │
+                     └────────┬────────┘
+                              │
+               ┌──────────────┼──────────────┐
+               │ FAIL         │              │ SUCCESS
+               ▼              │              ▼
+        ┌────────────┐        │     ┌────────────────┐
+        │ Show error │        │     │ Load JWT claims│
+        │ + retry    │        │     │ (role, school) │
+        └────────────┘        │     └───────┬────────┘
+                              │             │
+                              │    ┌────────┼────────┬────────────┐
+                              │    ▼        ▼        ▼            ▼
+                              │ /admin  /finance /teacher    /portal
+                              │ Dashboard dashboards dashboard dashboard
+
+
+11.2 FEE PAYMENT & RECEIPT FLOW
+-------------------------------
+
+  Account Officer                System                    Parent Portal
+        │                          │                            │
+        │── Select student ───────►│                            │
+        │◄─ Show outstanding ──────│                            │
+        │                          │                            │
+        │── Record payment ───────►│                            │
+        │   (amount, method)       │                            │
+        │                          │── Validate invoice ───────►│
+        │                          │── Update balance           │
+        │                          │── Generate receipt_no      │
+        │                          │── Create PDF → Storage     │
+        │◄─ Show receipt preview ──│                            │
+        │                          │── Send notification ──────►│
+        │                          │                            │── View fees
+        │                          │                            │── Download PDF
+
+
+11.3 ATTENDANCE REGISTER FLOW (Class Teacher)
+---------------------------------------------
+
+    START
+      │
+      ▼
+  ┌─────────────────────┐
+  │ Select class + date │
+  └──────────┬──────────┘
+             │
+             ▼
+  ┌─────────────────────┐     NO    ┌──────────────────┐
+  │ Register exists?    │──────────►│ Load student list│
+  └──────────┬──────────┘           │ Create draft reg │
+             │ YES                  └────────┬─────────┘
+             ▼                               │
+  ┌─────────────────────┐                     │
+  │ Load existing marks│◄────────────────────┘
+  └──────────┬──────────┘
+             │
+             ▼
+  ┌─────────────────────┐
+  │ Mark each student   │
+  │ P / A / L / E       │
+  └──────────┬──────────┘
+             │
+             ▼
+  ┌─────────────────────┐     NO
+  │ All marked?         │────────► Highlight unmarked rows
+  └──────────┬──────────┘
+             │ YES
+             ▼
+  ┌─────────────────────┐
+  │ Submit register     │
+  │ (status → submitted)│
+  └──────────┬──────────┘
+             │
+             ▼
+  ┌─────────────────────┐
+  │ Notify parents of   │
+  │ absent students     │
+  └──────────┬──────────┘
+             │
+             END
+
+
+11.4 ASSESSMENT → REPORT CARD FLOW
+----------------------------------
+
+  Teacher enters CA scores ──► System validates max scores
+         │
+         ▼
+  Teacher enters Exam score
+         │
+         ▼
+  System computes weighted total per subject
+         │
+         ▼
+  System assigns grade from grading scale
+         │
+         ▼
+  Teacher reviews draft results
+         │
+         ├── Edit ──► back to score entry
+         │
+         └── Publish ──► status = published
+                    │
+                    ├── Parent portal updated
+                    ├── PDF report card generated
+                    └── Notification sent to parents
+
+
+11.5 PARENT-TEACHER MESSAGING FLOW
+----------------------------------
+
+  Parent                          Firestore                    Teacher
+    │                                │                           │
+    │── Open messages ──────────────►│                           │
+    │◄─ Load thread (real-time) ─────│                           │
+    │                                │                           │
+    │── Send message ───────────────►│── onCreate trigger ──────►│ Push notif
+    │                                │                           │
+    │                                │◄── Teacher reply ─────────│
+    │◄─ Real-time update ────────────│                           │
+    │── Mark read ──────────────────►│                           │
+
+
+11.6 SUPER ADMIN USER PROVISIONING FLOW
+---------------------------------------
+
+  Super Admin → Users → Create New User
+       │
+       ├── Fill: name, email, role, assignments
+       ├── System creates Firebase Auth account
+       ├── System writes user record + role in DB
+       ├── System sets custom claims { role }
+       ├── System sends welcome email (temp password)
+       └── Audit log entry created
+
+
+11.7 END-TO-END DATA FLOW (MERMAID — paste into mermaid.live)
+-------------------------------------------------------------
+
+  flowchart TB
+    subgraph Client["Browser / PWA"]
+      A[Next.js Frontend]
+    end
+    subgraph Firebase["Firebase Platform"]
+      H[Hosting mscholar.web.app]
+      FA[Firebase Auth]
+      CF[Cloud Functions API]
+      FS[(Firestore)]
+      GCS[Cloud Storage]
+    end
+    subgraph Data["Data Layer"]
+      PG[(PostgreSQL)]
+    end
+    A --> H
+    A --> FA
+    A --> CF
+    A --> FS
+    CF --> PG
+    CF --> FS
+    CF --> GCS
+    FA --> CF
+
+
+================================================================================
+12. FILE STORAGE, RECEIPTS & REPORT GENERATION
+================================================================================
+
+STORAGE BUCKETS (Firebase Cloud Storage)
+----------------------------------------
+  /schools/{schoolId}/logos/logo.png
+  /students/{studentId}/photos/{filename}
+  /receipts/{receiptNo}.pdf
+  /report-cards/{session}/{term}/{studentId}.pdf
+  /payslips/{staffId}/{YYYY-MM}.pdf
+  /attachments/messages/{messageId}/{filename}
+  /exports/{reportType}/{timestamp}.xlsx
+
+RECEIPT PDF TEMPLATE FIELDS
+---------------------------
+  • School logo & name
+  • Receipt number & date
+  • Student name & admission number & class
+  • Payment breakdown (itemized fees)
+  • Amount paid (words + figures)
+  • Balance remaining
+  • Payment method & reference
+  • Received by (Account Officer name)
+  • QR code linking to verification URL: /verify/receipt/{receiptNo}
+
+REPORT CARD PDF TEMPLATE FIELDS
+-------------------------------
+  • Student biodata & passport photo
+  • Term & session
+  • Subject table: CA scores, exam, total, grade, teacher remark
+  • Overall total, average, position, grade
+  • Attendance summary
+  • Class teacher & principal comments
+  • Grading scale legend
+
+
+================================================================================
+13. NOTIFICATIONS & MESSAGING
+================================================================================
+
+NOTIFICATION TRIGGERS
+---------------------
+  Event                              │ Recipients        │ Channels
+  ───────────────────────────────────┼───────────────────┼──────────────
+  Payment recorded                   │ Parent            │ In-app, Email
+  Invoice overdue (7 days)           │ Parent, Account   │ In-app, Email
+  Attendance marked absent           │ Parent            │ In-app, SMS*
+  Teacher note created               │ Parent            │ In-app, Email
+  Results published                  │ Parent, Student   │ In-app, Email
+  New message received               │ Parent or Teacher │ In-app, Push
+  Payroll processed                  │ Staff             │ In-app, Email
+
+* SMS via Termii/Twilio integration — Phase 2
+
+IN-APP NOTIFICATION CENTER
+  • Bell icon with unread count
+  • Dropdown list → click navigates to relevant page
+  • Mark all read / individual dismiss
+
+
+================================================================================
+14. FIREBASE HOSTING & DEPLOYMENT ARCHITECTURE
+================================================================================
+
+FIREBASE PROJECT SETUP
+----------------------
+  Project display name : M-Scholar
+  Project ID           : mscholar (preferred) or mscholar-prod
+  Hosting site         : mscholar
+  Default URL          : https://mscholar.web.app
+  Optional custom domain: configure in Firebase Console → Hosting
+
+firebase.json (root)
+--------------------
+{
+  "hosting": {
+    "site": "mscholar",
+    "public": "apps/web/out",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "/api/**", "function": "api" },
+      { "source": "**", "destination": "/index.html" }
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css|woff2)",
+        "headers": [{ "key": "Cache-Control", "value": "max-age=31536000" }]
+      }
+    ]
+  },
+  "functions": {
+    "source": "apps/api",
+    "runtime": "nodejs20"
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}
+
+.firebaserc
+-----------
+{
+  "projects": {
+    "default": "mscholar"
+  },
+  "targets": {
+    "mscholar": {
+      "hosting": {
+        "mscholar": ["mscholar"]
+      }
+    }
+  }
+}
+
+DEPLOY COMMANDS
+---------------
+  firebase login
+  firebase use mscholar
+  npm run build          # builds Next.js to apps/web/out
+  firebase deploy        # hosting + functions + rules
+
+ENVIRONMENT STRATEGY
+--------------------
+  dev     : localhost:3000 + Firebase emulators
+  staging : mscholar-staging.web.app (optional second site)
+  prod    : mscholar.web.app
+
+
+================================================================================
+15. GITHUB REPOSITORY STRUCTURE & CI/CD PIPELINE
+================================================================================
+
+REPOSITORY NAME: M-Scholar (GitHub: Musa-Salami/M-Scholar)
+
+MONOREPO STRUCTURE
+------------------
+M-Scholar/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                 # Lint, test, typecheck on PR
+│       └── deploy-production.yml  # Deploy to Firebase on main push
+├── apps/
+│   ├── web/                       # Next.js frontend
+│   │   ├── src/
+│   │   │   ├── app/
+│   │   │   │   ├── (auth)/login/
+│   │   │   │   ├── admin/         # Super Admin portal
+│   │   │   │   ├── finance/       # Account Officer portal
+│   │   │   │   ├── teacher/       # Class Teacher portal
+│   │   │   │   └── portal/        # Parent/Student portal
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   ├── lib/
+│   │   │   └── styles/
+│   │   ├── public/
+│   │   └── package.json
+│   └── api/                       # Cloud Functions / NestJS
+│       ├── src/
+│       │   ├── modules/
+│       │   │   ├── auth/
+│       │   │   ├── users/
+│       │   │   ├── students/
+│       │   │   ├── finance/
+│       │   │   ├── attendance/
+│       │   │   ├── assessments/
+│       │   │   └── messaging/
+│       │   └── index.ts
+│       └── package.json
+├── packages/
+│   ├── shared/                    # Shared types, Zod schemas, constants
+│   └── ui/                        # Shared UI components (optional)
+├── prisma/
+│   └── schema.prisma              # If using PostgreSQL
+├── docs/
+│   └── M-SCHOLAR_COMPLETE_TECHNICAL_SPECIFICATION.txt
+├── firebase.json
+├── .firebaserc
+├── firestore.rules
+├── storage.rules
+├── .gitignore
+├── package.json                   # Turborepo or npm workspaces root
+├── turbo.json
+└── README.md
+
+GITHUB ACTIONS — deploy-production.yml
+--------------------------------------
+  name: Deploy to Firebase Hosting
+  on:
+    push:
+      branches: [main]
+  jobs:
+    deploy:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/setup-node@v4
+          with: { node-version: '20' }
+        - run: npm ci
+        - run: npm run build
+        - uses: FirebaseExtended/action-hosting-deploy@v0
+          with:
+            repoToken: ${{ secrets.GITHUB_TOKEN }}
+            firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MSCHOLAR }}
+            channelId: live
+            projectId: mscholar
+
+REQUIRED GITHUB SECRETS
+-----------------------
+  FIREBASE_SERVICE_ACCOUNT_MSCHOLAR  — JSON service account key
+  NEXT_PUBLIC_FIREBASE_API_KEY       — Firebase web config
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN   — mscholar.firebaseapp.com
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID    — mscholar
+
+
+================================================================================
+16. DEVELOPMENT PHASES & MILESTONES
+================================================================================
+
+PHASE 1 — Foundation (Weeks 1-3)
+  • Repo setup, Firebase project, CI/CD
+  • Auth + RBAC + role-based routing
+  • Super Admin: user CRUD, school config, classes
+  • Basic UI shell for all four portals
+
+PHASE 2 — Finance Module (Weeks 4-6)
+  • Fee structures, invoices, payments, receipts
+  • Income/expenditure ledger
+  • Account Officer dashboard & reports
+
+PHASE 3 — Academic Module (Weeks 7-9)
+  • Attendance register
+  • CA & term results
+  • Report card PDF generation
+
+PHASE 4 — Parent Portal & Comms (Weeks 10-11)
+  • Parent dashboard, fees view, results view
+  • Teacher notes
+  • Real-time messaging
+
+PHASE 5 — Payroll & Polish (Weeks 12-13)
+  • Staff salary & payslips
+  • Notifications (email + in-app)
+  • Performance optimization, PWA, UAT
+
+PHASE 6 — Launch (Week 14)
+  • Production deploy to mscholar.web.app
+  • Admin training documentation
+  • Monitoring & backup verification
+
+
+================================================================================
+17. NON-FUNCTIONAL REQUIREMENTS
+================================================================================
+
+  Performance  : Page load < 2s on 4G; API p95 < 500ms
+  Availability : 99.5% uptime target
+  Scalability  : Support 5,000 students, 200 staff per school instance
+  Accessibility: WCAG 2.1 AA (keyboard nav, ARIA labels, color contrast)
+  Browser support: Chrome, Firefox, Safari, Edge (last 2 versions)
+  Mobile       : Responsive 320px–2560px; PWA installable
+  Backup       : Daily automated DB backup; 30-day retention
+  Localization : English (default); structure for future Hausa/Yoruba/Igbo
+  Data retention: 7 years financial records; configurable academic archive
+
+
+================================================================================
+18. TESTING STRATEGY
+================================================================================
+
+  Unit Tests        : Jest/Vitest — business logic, grade calculation, fee balance
+  Integration Tests : API endpoints with test DB (Supertest)
+  E2E Tests         : Playwright — critical flows per role:
+                      • Admin creates teacher account
+                      • Account officer records payment → receipt download
+                      • Teacher submits attendance
+                      • Teacher publishes results → parent views
+                      • Parent sends message → teacher receives
+  Security Tests    : OWASP ZAP scan; Firestore rules unit tests
+  Load Tests        : k6 — 100 concurrent parent logins during result day
+
+
+================================================================================
+19. APPENDIX: SAMPLE ENVIRONMENT VARIABLES
+================================================================================
+
+# apps/web/.env.local
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=mscholar.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=mscholar
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=mscholar.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_APP_URL=https://mscholar.web.app
+
+# apps/api/.env
+DATABASE_URL=postgresql://user:pass@host:5432/mscholar
+FIREBASE_PROJECT_ID=mscholar
+JWT_SECRET=<generated-256-bit-secret>
+SMTP_HOST=smtp.sendgrid.net
+SMTP_USER=apikey
+SMTP_PASS=
+SCHOOL_NAME=M-Scholar Demo School
+
+
+================================================================================
+20. APPENDIX: GLOSSARY
+================================================================================
+
+  CA        — Continuous Assessment (coursework scores during term)
+  RBAC      — Role-Based Access Control
+  BFF       — Backend-for-Frontend API aggregation layer
+  SMS       — School Management System
+  PWA       — Progressive Web App
+  JWT       — JSON Web Token
+  FK        — Foreign Key
+  CRUD      — Create, Read, Update, Delete
+  UAT       — User Acceptance Testing
+  P&L       — Profit and Loss (Income vs Expenditure statement)
+
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+
+For implementation questions or schema migrations, refer to this document
+as the single source of truth. All pull requests should align module behavior
+with Sections 3, 7, and 9.
+
+Repository : https://github.com/Musa-Salami/M-Scholar
+Live URL   : https://mscholar.web.app (after Firebase deploy)
