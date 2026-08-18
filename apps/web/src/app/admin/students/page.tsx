@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Eye, Pencil, Plus, X } from "lucide-react";
-import { ADMIN_NAV, type Student } from "@m-scholar/shared";
+import {
+  ADMIN_NAV,
+  buildAdmissionNo,
+  uniqueAdmissionNo,
+  classLevelCode,
+  describeAdmissionNo,
+  type Student,
+} from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { DataTable, FormField, btnSecondary } from "@/components/finance-ui";
@@ -14,16 +21,20 @@ import { useSchoolStore } from "@/lib/school-store";
 const fieldClass =
   "w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500 disabled:bg-slate-50 disabled:text-slate-600";
 
+const currentYear = new Date().getFullYear();
+
 const EMPTY_FORM = {
   name: "",
-  admissionNo: "",
   className: "",
+  admissionTerm: "1" as "1" | "2" | "3",
+  admissionYear: String(currentYear),
   parentEmail: "",
   dateOfBirth: "",
   parentAddress: "",
   parentPhone: "",
   disability: "None",
   allergy: "None",
+  admissionNo: "",
 };
 
 type Mode = "closed" | "enroll" | "view" | "edit";
@@ -31,14 +42,16 @@ type Mode = "closed" | "enroll" | "view" | "edit";
 function fromStudent(s: Student) {
   return {
     name: s.name,
-    admissionNo: s.admissionNo,
     className: s.className,
+    admissionTerm: "1" as "1" | "2" | "3",
+    admissionYear: String(currentYear),
     parentEmail: s.parentEmail,
     dateOfBirth: s.dateOfBirth ?? "",
     parentAddress: s.parentAddress ?? "",
     parentPhone: s.parentPhone ?? "",
     disability: s.disability || "None",
     allergy: s.allergy || "None",
+    admissionNo: s.admissionNo,
   };
 }
 
@@ -56,8 +69,27 @@ export default function AdminStudentsPage() {
 
   const classOptions = classes.length
     ? classes.map((c) => c.name)
-    : ["JSS 1A", "JSS 1B", "JSS 2A", "SS 1 Science", "SS 2 Arts"];
+    : ["Nursery 1", "Primary 1", "JSS 1A", "JSS 1B", "JSS 2A", "SS 1 Science", "SS 2 Arts"];
   const readOnly = mode === "view";
+
+  const generatedNo = useMemo(() => {
+    const year = Number(form.admissionYear) || currentYear;
+    const term = Number(form.admissionTerm) as 1 | 2 | 3;
+    const base = buildAdmissionNo({
+      className: form.className,
+      term,
+      fullName: form.name,
+      year,
+    });
+    const others = students
+      .filter((s) => s.id !== editingId)
+      .map((s) => s.admissionNo);
+    return uniqueAdmissionNo(base, others);
+  }, [form.className, form.admissionTerm, form.admissionYear, form.name, students, editingId]);
+
+  const admissionNo = mode === "enroll" ? generatedNo : form.admissionNo;
+  const levelOk = Boolean(classLevelCode(form.className));
+  const decoded = admissionNo ? describeAdmissionNo(admissionNo) : "";
 
   if (!authReady || !schoolReady) {
     return (
@@ -94,9 +126,10 @@ export default function AdminStudentsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === "view") return;
+    if (mode === "enroll" && !generatedNo) return;
     const payload = {
       name: form.name.trim(),
-      admissionNo: form.admissionNo.trim(),
+      admissionNo: mode === "enroll" ? generatedNo : form.admissionNo,
       className: form.className,
       parentEmail: form.parentEmail.trim(),
       dateOfBirth: form.dateOfBirth,
@@ -121,7 +154,7 @@ export default function AdminStudentsPage() {
     <PortalShell navItems={ADMIN_NAV} title="Super Admin Portal">
       <PageHeader
         title="Students"
-        description="Enroll students and open any record to view or edit."
+        description="Admission numbers are assigned automatically from class level, term, name initials, and year."
         action={
           <button
             onClick={openEnroll}
@@ -142,10 +175,16 @@ export default function AdminStudentsPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label="Full name">
-              <input className={fieldClass} value={form.name} disabled={readOnly} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <input className={fieldClass} value={form.name} disabled={readOnly} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="Musa Ismaila Salami" />
             </FormField>
             <FormField label="Admission no.">
-              <input className={fieldClass} value={form.admissionNo} disabled={readOnly} onChange={(e) => setForm({ ...form, admissionNo: e.target.value })} required />
+              <input className={fieldClass} value={admissionNo} disabled readOnly />
+              {mode === "enroll" && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Auto-assigned: N Nursery, P Primary, J Junior Secondary, S Senior Secondary, then term, initials, and year.
+                  {decoded ? ` Example reading: ${decoded}.` : ""}
+                </p>
+              )}
             </FormField>
             <FormField label="Date of birth">
               <input type="date" className={fieldClass} value={form.dateOfBirth} disabled={readOnly} onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })} required />
@@ -156,7 +195,38 @@ export default function AdminStudentsPage() {
                   <option key={c}>{c}</option>
                 ))}
               </select>
+              {mode === "enroll" && form.className && !levelOk && (
+                <p className="mt-1 text-xs text-amber-700">
+                  Class name should start with Nursery, Primary, JSS, or SS so the admission number can be generated.
+                </p>
+              )}
             </FormField>
+            {mode === "enroll" && (
+              <>
+                <FormField label="Term of admission">
+                  <select
+                    className={fieldClass}
+                    value={form.admissionTerm}
+                    onChange={(e) => setForm({ ...form, admissionTerm: e.target.value as "1" | "2" | "3" })}
+                  >
+                    <option value="1">1st term</option>
+                    <option value="2">2nd term</option>
+                    <option value="3">3rd term</option>
+                  </select>
+                </FormField>
+                <FormField label="Year of admission">
+                  <input
+                    type="number"
+                    min={2000}
+                    max={2100}
+                    className={fieldClass}
+                    value={form.admissionYear}
+                    onChange={(e) => setForm({ ...form, admissionYear: e.target.value })}
+                    required
+                  />
+                </FormField>
+              </>
+            )}
             <FormField label="Parent email">
               <input type="email" className={fieldClass} value={form.parentEmail} disabled={readOnly} onChange={(e) => setForm({ ...form, parentEmail: e.target.value })} required />
             </FormField>
@@ -183,7 +253,11 @@ export default function AdminStudentsPage() {
               </>
             ) : (
               <>
-                <button type="submit" className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700">
+                <button
+                  type="submit"
+                  disabled={mode === "enroll" && !generatedNo}
+                  className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
+                >
                   {mode === "edit" ? "Save changes" : "Enroll"}
                 </button>
                 <button type="button" onClick={closePanel} className={btnSecondary}>Cancel</button>

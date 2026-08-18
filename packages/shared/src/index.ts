@@ -1,6 +1,7 @@
 export * from "./finance";
 export * from "./academic";
 export * from "./school";
+export * from "./admission";
 
 export type UserRole =
   | "super_admin"
