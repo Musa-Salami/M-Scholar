@@ -167,9 +167,9 @@ export function vaultHasRealData(): boolean {
   return loadVault() !== null;
 }
 
-export function exportVaultFile() {
-  const loaded = loadVault();
-  const blob = new Blob([JSON.stringify(loaded?.snapshot ?? {}, null, 2)], {
+export function exportVaultFile(snapshot?: AppSnapshot) {
+  const payload = snapshot ?? loadVault()?.snapshot ?? {};
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
     type: "application/json",
   });
   const url = URL.createObjectURL(blob);

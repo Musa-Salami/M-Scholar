@@ -31,7 +31,6 @@ import {
   readLegacyFragments,
   saveVault,
   setDataMode,
-  vaultHasRealData,
 } from "@/lib/data-vault";
 import {
   SEED_SETTINGS,
@@ -44,6 +43,7 @@ import { useFinanceStore } from "@/lib/finance-store";
 import { useAcademicStore } from "@/lib/academic-store";
 import { useCommsStore } from "@/lib/comms-store";
 import { useNotificationStore } from "@/lib/notification-store";
+import { DEMO_IDS } from "@/lib/demo-ids";
 
 interface DataModeState {
   mode: DataMode;
@@ -75,6 +75,161 @@ function asSettings(raw: AppSnapshot["school"]["settings"] | undefined): SchoolS
     session: raw?.session || SEED_SETTINGS.session,
     term: raw?.term || SEED_SETTINGS.term,
   };
+}
+
+function withoutDemo<T extends { id: string }>(rows: unknown, demoIds: Set<string>): T[] {
+  return asArray<T>(rows).filter((row) => !demoIds.has(row.id));
+}
+
+function emptySnapshot(settings?: SchoolSettings): AppSnapshot {
+  return {
+    version: VAULT_VERSION,
+    school: {
+      users: [],
+      classes: [],
+      settings: settings ?? SEED_SETTINGS,
+    },
+    finance: {
+      students: [],
+      feeStructures: [],
+      invoices: [],
+      payments: [],
+      income: [],
+      expenditure: [],
+      staff: [],
+      payrollRuns: [],
+      invoiceSeq: 1,
+      receiptSeq: 1,
+    },
+    academic: {
+      registers: [],
+      assessments: [],
+      scores: [],
+      termResults: [],
+    },
+    comms: {
+      notes: [],
+      threads: [],
+      messages: [],
+    },
+    notifications: {
+      notifications: [],
+    },
+  };
+}
+
+function stripDemoSeeds(snapshot: AppSnapshot): AppSnapshot {
+  const students = withoutDemo<Student>(snapshot.finance.students, DEMO_IDS.students);
+  const studentIds = new Set(students.map((s) => s.id));
+  const classes = withoutDemo<SchoolClass>(snapshot.school.classes, DEMO_IDS.classes);
+  const assessments = withoutDemo<Assessment>(snapshot.academic.assessments, DEMO_IDS.assessments);
+  const assessmentIds = new Set(assessments.map((a) => a.id));
+  const threads = withoutDemo<MessageThread>(snapshot.comms.threads, DEMO_IDS.threads).filter(
+    (t) => !DEMO_IDS.students.has(t.studentId)
+  );
+  const threadIds = new Set(threads.map((t) => t.id));
+
+  return {
+    version: VAULT_VERSION,
+    school: {
+      users: withoutDemo<SchoolUser>(snapshot.school.users, DEMO_IDS.users),
+      classes,
+      settings: asSettings(snapshot.school.settings),
+    },
+    finance: {
+      students,
+      feeStructures: withoutDemo<FeeStructure>(snapshot.finance.feeStructures, DEMO_IDS.feeStructures),
+      invoices: withoutDemo<Invoice>(snapshot.finance.invoices, DEMO_IDS.invoices).filter((i) =>
+        studentIds.has(i.studentId)
+      ),
+      payments: withoutDemo<Payment>(snapshot.finance.payments, DEMO_IDS.payments).filter((p) =>
+        studentIds.has(p.studentId)
+      ),
+      income: withoutDemo<IncomeRecord>(snapshot.finance.income, DEMO_IDS.income),
+      expenditure: withoutDemo<ExpenditureRecord>(snapshot.finance.expenditure, DEMO_IDS.expenditure),
+      staff: withoutDemo<StaffMember>(snapshot.finance.staff, DEMO_IDS.staff),
+      payrollRuns: asArray<PayrollRun>(snapshot.finance.payrollRuns),
+      invoiceSeq: snapshot.finance.invoiceSeq ?? 1,
+      receiptSeq: snapshot.finance.receiptSeq ?? 1,
+    },
+    academic: {
+      registers: withoutDemo<AttendanceRegister>(snapshot.academic.registers, DEMO_IDS.registers),
+      assessments,
+      scores: withoutDemo<AssessmentScore>(snapshot.academic.scores, DEMO_IDS.scores).filter(
+        (s) => studentIds.has(s.studentId) && assessmentIds.has(s.assessmentId)
+      ),
+      termResults: withoutDemo<TermResult>(snapshot.academic.termResults, DEMO_IDS.results).filter((r) =>
+        studentIds.has(r.studentId)
+      ),
+    },
+    comms: {
+      notes: withoutDemo<TeacherNote>(snapshot.comms.notes, DEMO_IDS.notes).filter((n) => studentIds.has(n.studentId)),
+      threads,
+      messages: withoutDemo<ChatMessage>(snapshot.comms.messages, DEMO_IDS.messages).filter((m) =>
+        threadIds.has(m.threadId)
+      ),
+    },
+    notifications: {
+      notifications: withoutDemo<AppNotification>(snapshot.notifications.notifications, DEMO_IDS.notifications),
+    },
+  };
+}
+
+function hasEnteredRecords(snapshot: AppSnapshot): boolean {
+  return (
+    snapshot.school.users.length > 0 ||
+    snapshot.school.classes.length > 0 ||
+    snapshot.finance.students.length > 0 ||
+    snapshot.finance.feeStructures.length > 0 ||
+    snapshot.finance.invoices.length > 0 ||
+    snapshot.finance.payments.length > 0 ||
+    snapshot.finance.income.length > 0 ||
+    snapshot.finance.expenditure.length > 0 ||
+    snapshot.finance.staff.length > 0 ||
+    snapshot.finance.payrollRuns.length > 0 ||
+    snapshot.academic.registers.length > 0 ||
+    snapshot.academic.assessments.length > 0 ||
+    snapshot.academic.scores.length > 0 ||
+    snapshot.academic.termResults.length > 0 ||
+    snapshot.comms.notes.length > 0 ||
+    snapshot.comms.threads.length > 0 ||
+    snapshot.comms.messages.length > 0
+  );
+}
+
+function containsDemoSeeds(snapshot: AppSnapshot): boolean {
+  const checks: Array<[unknown, Set<string>]> = [
+    [snapshot.school.users, DEMO_IDS.users],
+    [snapshot.school.classes, DEMO_IDS.classes],
+    [snapshot.finance.students, DEMO_IDS.students],
+    [snapshot.finance.feeStructures, DEMO_IDS.feeStructures],
+    [snapshot.finance.invoices, DEMO_IDS.invoices],
+    [snapshot.finance.payments, DEMO_IDS.payments],
+    [snapshot.finance.income, DEMO_IDS.income],
+    [snapshot.finance.expenditure, DEMO_IDS.expenditure],
+    [snapshot.finance.staff, DEMO_IDS.staff],
+    [snapshot.academic.registers, DEMO_IDS.registers],
+    [snapshot.academic.assessments, DEMO_IDS.assessments],
+    [snapshot.academic.scores, DEMO_IDS.scores],
+    [snapshot.academic.termResults, DEMO_IDS.results],
+    [snapshot.comms.notes, DEMO_IDS.notes],
+    [snapshot.comms.threads, DEMO_IDS.threads],
+    [snapshot.comms.messages, DEMO_IDS.messages],
+    [snapshot.notifications.notifications, DEMO_IDS.notifications],
+  ];
+  return checks.some(([rows, ids]) => asArray<{ id: string }>(rows).some((row) => ids.has(row.id)));
+}
+
+function rewriteVaultIfPolluted(snapshot: AppSnapshot): { snapshot: AppSnapshot; savedAt: string | null } {
+  const real = stripDemoSeeds(snapshot);
+  if (!containsDemoSeeds(snapshot)) return { snapshot: real, savedAt: null };
+  const result = saveVault(real);
+  lastPersisted = JSON.stringify(real);
+  return { snapshot: real, savedAt: result.savedAt };
+}
+
+function applyRealSnapshot(snapshot: AppSnapshot) {
+  applySnapshot(stripDemoSeeds(snapshot));
 }
 
 function collectSnapshot(): AppSnapshot {
@@ -172,25 +327,19 @@ function resetAllToDemo() {
 function persistNow() {
   if (hydrating || typeof window === "undefined") return;
 
-  const snapshot = collectSnapshot();
+  const live = collectSnapshot();
+  const snapshot = stripDemoSeeds(live);
   const encoded = JSON.stringify(snapshot);
-  if (encoded === lastPersisted) return;
 
   if (getDataMode() === "demo") {
+    if (!hasEnteredRecords(snapshot)) return;
+    hydrating = true;
+    applySnapshot(snapshot);
+    hydrating = false;
     setDataMode("real");
   }
 
-  const countsChanged =
-    JSON.stringify(useSchoolStore.getState().classes) !== JSON.stringify(snapshot.school.classes);
-  if (countsChanged) {
-    hydrating = true;
-    useSchoolStore.getState().applyPersisted({
-      users: snapshot.school.users as SchoolUser[],
-      classes: snapshot.school.classes as SchoolClass[],
-      settings: snapshot.school.settings as SchoolSettings,
-    });
-    hydrating = false;
-  }
+  if (encoded === lastPersisted) return;
 
   const result = saveVault(snapshot);
   lastPersisted = encoded;
@@ -198,7 +347,7 @@ function persistNow() {
     mode: "real",
     savedAt: result.savedAt,
     vaultHealthy: result.ok,
-    hasRealVault: true,
+    hasRealVault: hasEnteredRecords(snapshot),
   });
 }
 
@@ -234,16 +383,16 @@ function bindListeners() {
   window.addEventListener("storage", (event) => {
     if (!event.key || (event.key !== VAULT_KEYS.primary && event.key !== VAULT_KEYS.mode)) return;
     const mode = getDataMode();
+    const loaded = loadVault();
+    const real = loaded ? stripDemoSeeds(loaded.snapshot) : emptySnapshot();
     useDataModeStore.setState({
       mode,
-      hasRealVault: vaultHasRealData(),
-      savedAt: loadVault()?.savedAt ?? useDataModeStore.getState().savedAt,
+      hasRealVault: hasEnteredRecords(real),
+      savedAt: loaded?.savedAt ?? useDataModeStore.getState().savedAt,
     });
-    if (mode !== "real") return;
-    const loaded = loadVault();
-    if (!loaded) return;
+    if (mode !== "real" || !loaded) return;
     hydrating = true;
-    applySnapshot(loaded.snapshot);
+    applyRealSnapshot(loaded.snapshot);
     lastPersisted = JSON.stringify(collectSnapshot());
     hydrating = false;
   });
@@ -255,12 +404,12 @@ function migrateLegacyIfNeeded() {
   if (!legacy.students && !legacy.users && !legacy.classes) return false;
 
   hydrating = true;
-  resetAllToDemo();
+  applySnapshot(emptySnapshot());
   if (legacy.users || legacy.classes) {
     const school = useSchoolStore.getState();
     useSchoolStore.getState().applyPersisted({
-      users: asArray<SchoolUser>(legacy.users ?? school.users),
-      classes: asArray<SchoolClass>(legacy.classes ?? school.classes),
+      users: asArray<SchoolUser>(legacy.users ?? []),
+      classes: asArray<SchoolClass>(legacy.classes ?? []),
       settings: school.settings,
     });
   }
@@ -297,15 +446,16 @@ function loadDemoInMemory() {
   hydrating = true;
   resetAllToDemo();
   setDataMode("demo");
-  lastPersisted = JSON.stringify(collectSnapshot());
+  lastPersisted = JSON.stringify(stripDemoSeeds(collectSnapshot()));
   useSchoolStore.getState().restore();
   hydrating = false;
   const vault = loadVault();
+  const real = vault ? stripDemoSeeds(vault.snapshot) : emptySnapshot();
   useDataModeStore.setState({
     mode: "demo",
     savedAt: vault?.savedAt ?? null,
     vaultHealthy: true,
-    hasRealVault: Boolean(vault),
+    hasRealVault: hasEnteredRecords(real),
   });
 }
 
@@ -315,20 +465,30 @@ function loadRealInMemory(): boolean {
     persistTimer = null;
   }
   const loaded = loadVault();
-  if (!loaded) return false;
+  const real = loaded
+    ? stripDemoSeeds(loaded.snapshot)
+    : emptySnapshot(useSchoolStore.getState().settings);
   hydrating = true;
-  applySnapshot(loaded.snapshot);
+  applySnapshot(real);
   setDataMode("real");
-  lastPersisted = JSON.stringify(collectSnapshot());
+  lastPersisted = JSON.stringify(real);
   useSchoolStore.getState().restore();
   hydrating = false;
+  let savedAt = loaded?.savedAt ?? null;
+  let vaultHealthy = true;
+  if (loaded && containsDemoSeeds(loaded.snapshot)) {
+    const result = saveVault(real);
+    savedAt = result.savedAt;
+    vaultHealthy = result.ok;
+  }
+  const entered = hasEnteredRecords(real);
   useDataModeStore.setState({
     mode: "real",
-    savedAt: loaded.savedAt,
-    vaultHealthy: true,
-    hasRealVault: true,
+    savedAt,
+    vaultHealthy,
+    hasRealVault: entered,
   });
-  return true;
+  return entered;
 }
 
 export const useDataModeStore = create<DataModeState>()(() => ({
@@ -338,7 +498,11 @@ export const useDataModeStore = create<DataModeState>()(() => ({
   hasRealVault: false,
   loadDemo: () => loadDemoInMemory(),
   loadReal: () => loadRealInMemory(),
-  downloadBackup: () => exportVaultFile(),
+  downloadBackup: () => {
+    const loaded = loadVault();
+    if (!loaded) return;
+    exportVaultFile(stripDemoSeeds(loaded.snapshot));
+  },
 }));
 
 async function boot() {
@@ -350,26 +514,33 @@ async function boot() {
   const loaded = (await loadVaultAsync()) ?? loadVault();
   const mode = getDataMode();
 
-  if (loaded && mode === "real") {
+  const sanitized = loaded ? rewriteVaultIfPolluted(loaded.snapshot) : null;
+  const vault = sanitized
+    ? { snapshot: sanitized.snapshot, savedAt: sanitized.savedAt ?? loaded?.savedAt ?? null }
+    : loaded
+      ? { snapshot: stripDemoSeeds(loaded.snapshot), savedAt: loaded.savedAt }
+      : null;
+
+  if (vault && mode === "real") {
     hydrating = true;
-    applySnapshot(loaded.snapshot);
-    lastPersisted = JSON.stringify(collectSnapshot());
+    applySnapshot(vault.snapshot);
+    lastPersisted = JSON.stringify(vault.snapshot);
     useSchoolStore.getState().restore();
     hydrating = false;
     useDataModeStore.setState({
       mode: "real",
-      savedAt: loaded.savedAt,
+      savedAt: vault.savedAt,
       vaultHealthy: true,
-      hasRealVault: true,
+      hasRealVault: hasEnteredRecords(vault.snapshot),
     });
     return;
   }
 
   loadDemoInMemory();
-  if (loaded) {
+  if (vault) {
     useDataModeStore.setState({
-      hasRealVault: true,
-      savedAt: loaded.savedAt,
+      hasRealVault: hasEnteredRecords(vault.snapshot),
+      savedAt: vault.savedAt,
     });
   }
 }
