@@ -4,64 +4,102 @@ import { FINANCE_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { DataTable, StatusBadge } from "@/components/finance-ui";
-import { downloadCsv, ExportButton } from "@/components/receipt-modal";
+import { PdfCsvButtons } from "@/components/receipt-modal";
+import { downloadCsv, downloadTablePdf, formatPdfMoney } from "@/lib/pdf";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useFinanceStore } from "@/lib/finance-store";
+import { useSchoolStore } from "@/lib/school-store";
 import { formatCurrency } from "@/lib/utils";
 
 export default function ReportsPage() {
   useRequireAuth(["account_officer"]);
   const { invoices, payments, income, expenditure, staff, payrollRuns, getStudent, stats } = useFinanceStore();
+  const settings = useSchoolStore((s) => s.settings);
   const s = stats();
 
   const debtors = invoices.filter((i) => i.balance > 0);
+  const school = settings.schoolName;
 
-  const exportFeeCollection = () => {
-    downloadCsv(
-      "fee-collection-report.csv",
-      ["Receipt", "Student", "Amount", "Date"],
-      payments.map((p) => {
-        const student = getStudent(p.studentId);
-        return [p.receiptNo, student?.name ?? "", String(p.amount), p.paidAt.slice(0, 10)];
-      })
-    );
-  };
+  const feeHeaders = ["Receipt", "Student", "Amount", "Date"];
+  const feeRows = payments.map((p) => {
+    const student = getStudent(p.studentId);
+    return [p.receiptNo, student?.name ?? "", formatPdfMoney(p.amount), p.paidAt.slice(0, 10)];
+  });
+  const feeCsvRows = payments.map((p) => {
+    const student = getStudent(p.studentId);
+    return [p.receiptNo, student?.name ?? "", String(p.amount), p.paidAt.slice(0, 10)];
+  });
 
-  const exportDebtors = () => {
-    downloadCsv(
-      "outstanding-fees.csv",
-      ["Invoice", "Student", "Class", "Balance", "Status", "Due Date"],
-      debtors.map((i) => {
-        const student = getStudent(i.studentId);
-        return [i.invoiceNo, student?.name ?? "", student?.className ?? "", String(i.balance), i.status, i.dueDate];
-      })
-    );
-  };
+  const debtorHeaders = ["Invoice", "Student", "Class", "Balance", "Status", "Due Date"];
+  const debtorRows = debtors.map((i) => {
+    const student = getStudent(i.studentId);
+    return [i.invoiceNo, student?.name ?? "", student?.className ?? "", formatPdfMoney(i.balance), i.status, i.dueDate];
+  });
+  const debtorCsvRows = debtors.map((i) => {
+    const student = getStudent(i.studentId);
+    return [i.invoiceNo, student?.name ?? "", student?.className ?? "", String(i.balance), i.status, i.dueDate];
+  });
 
-  const exportIncomeExpenditure = () => {
-    const rows = [
-      ...income.map((r) => ["Income", r.date, r.description, String(r.amount)]),
-      ...expenditure.map((r) => ["Expenditure", r.date, r.description, String(-r.amount)]),
-    ];
-    downloadCsv("income-expenditure.csv", ["Type", "Date", "Description", "Amount"], rows);
-  };
+  const ledgerHeaders = ["Type", "Date", "Description", "Amount"];
+  const ledgerRows = [
+    ...income.map((r) => ["Income", r.date, r.description, formatPdfMoney(r.amount)]),
+    ...expenditure.map((r) => ["Expenditure", r.date, r.description, formatPdfMoney(-r.amount)]),
+  ];
+  const ledgerCsvRows = [
+    ...income.map((r) => ["Income", r.date, r.description, String(r.amount)]),
+    ...expenditure.map((r) => ["Expenditure", r.date, r.description, String(-r.amount)]),
+  ];
 
-  const exportPayroll = () => {
-    downloadCsv(
-      "payroll-summary.csv",
-      ["Employee ID", "Name", "Designation", "Net Pay"],
-      staff.map((m) => [
-        m.employeeId,
-        m.name,
-        m.designation,
-        String(m.basicSalary + m.allowances - m.deductions),
-      ])
-    );
-  };
+  const payrollHeaders = ["Employee ID", "Name", "Designation", "Net Pay"];
+  const payrollRows = staff.map((m) => [
+    m.employeeId,
+    m.name,
+    m.designation,
+    formatPdfMoney(m.basicSalary + m.allowances - m.deductions),
+  ]);
+  const payrollCsvRows = staff.map((m) => [
+    m.employeeId,
+    m.name,
+    m.designation,
+    String(m.basicSalary + m.allowances - m.deductions),
+  ]);
+
+  const reports = [
+    {
+      title: "Fee Collection Report",
+      desc: "All recorded fee payments",
+      onPdf: () =>
+        downloadTablePdf("fee-collection-report.pdf", school, "Fee collection report", feeHeaders, feeRows),
+      onCsv: () => downloadCsv("fee-collection-report.csv", feeHeaders, feeCsvRows),
+    },
+    {
+      title: "Outstanding Balances",
+      desc: "Debtors list by invoice",
+      onPdf: () =>
+        downloadTablePdf("outstanding-fees.pdf", school, "Outstanding fee balances", debtorHeaders, debtorRows),
+      onCsv: () => downloadCsv("outstanding-fees.csv", debtorHeaders, debtorCsvRows),
+    },
+    {
+      title: "Income vs Expenditure",
+      desc: "Combined ledger export",
+      onPdf: () =>
+        downloadTablePdf("income-expenditure.pdf", school, "Income vs expenditure", ledgerHeaders, ledgerRows),
+      onCsv: () => downloadCsv("income-expenditure.csv", ledgerHeaders, ledgerCsvRows),
+    },
+    {
+      title: "Payroll Summary",
+      desc: "Staff net pay register",
+      onPdf: () => downloadTablePdf("payroll-summary.pdf", school, "Payroll summary", payrollHeaders, payrollRows),
+      onCsv: () => downloadCsv("payroll-summary.csv", payrollHeaders, payrollCsvRows),
+    },
+  ];
 
   return (
     <PortalShell navItems={FINANCE_NAV} title="Finance Officer Portal">
-      <PageHeader title="Financial Reports" description="Generate and export financial reports." />
+      <PageHeader
+        title="Financial Reports"
+        description="Download reports as PDF. CSV is available for spreadsheet work."
+      />
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card-shadow rounded-2xl border border-slate-100 bg-white p-5">
@@ -85,18 +123,13 @@ export default function ReportsPage() {
       </div>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2">
-        {[
-          { title: "Fee Collection Report", desc: "All recorded fee payments", action: exportFeeCollection },
-          { title: "Outstanding Balances", desc: "Debtors list by invoice", action: exportDebtors },
-          { title: "Income vs Expenditure", desc: "Combined ledger export", action: exportIncomeExpenditure },
-          { title: "Payroll Summary", desc: "Staff net pay register", action: exportPayroll },
-        ].map(({ title, desc, action }) => (
-          <div key={title} className="card-shadow flex items-center justify-between rounded-2xl border border-slate-100 bg-white p-5">
+        {reports.map(({ title, desc, onPdf, onCsv }) => (
+          <div key={title} className="card-shadow flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white p-5">
             <div>
               <h4 className="font-semibold text-slate-900">{title}</h4>
               <p className="text-sm text-slate-500">{desc}</p>
             </div>
-            <ExportButton onClick={action} />
+            <PdfCsvButtons onPdf={onPdf} onCsv={onCsv} />
           </div>
         ))}
       </div>

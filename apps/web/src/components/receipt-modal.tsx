@@ -1,40 +1,112 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
 import { Download, Printer, X } from "lucide-react";
-import type { Payment } from "@m-scholar/shared";
+import type { InvoiceStatus, Payment } from "@m-scholar/shared";
 import { PAYMENT_METHOD_LABELS } from "@m-scholar/shared";
 import { formatCurrency } from "@/lib/utils";
 import { useFinanceStore } from "@/lib/finance-store";
+import { useSchoolStore } from "@/lib/school-store";
+import { SimplePdf, formatPdfMoney } from "@/lib/pdf";
 
 interface ReceiptModalProps {
   payment: Payment;
   onClose: () => void;
 }
 
+export function receiptStamp(status?: InvoiceStatus, balance?: number): {
+  label: "PAID" | "PARTIALLY PAID";
+  rgb: [number, number, number];
+  tone: string;
+} {
+  const paid = status === "paid" || (typeof balance === "number" && balance <= 0);
+  if (paid) {
+    return { label: "PAID", rgb: [5, 150, 105], tone: "text-emerald-600/20" };
+  }
+  return { label: "PARTIALLY PAID", rgb: [217, 119, 6], tone: "text-amber-600/20" };
+}
+
 export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
-  const printRef = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState(false);
   const getStudent = useFinanceStore((s) => s.getStudent);
+  const invoices = useFinanceStore((s) => s.invoices);
+  const settings = useSchoolStore((s) => s.settings);
   const student = getStudent(payment.studentId);
+  const invoice = invoices.find((i) => i.id === payment.invoiceId);
+  const stamp = receiptStamp(invoice?.status, invoice?.balance);
+
+  const downloadPdf = () => {
+    setBusy(true);
+    try {
+      const pdf = new SimplePdf();
+      pdf.setWatermark(stamp.label, stamp.rgb);
+      pdf.heading(settings.schoolName, "Official fee payment receipt");
+      pdf.keyValues([
+        ["Receipt No.", payment.receiptNo],
+        ["Invoice No.", invoice?.invoiceNo ?? "—"],
+        ["Date", new Date(payment.paidAt).toLocaleString()],
+        ["Student", student?.name ?? "—"],
+        ["Admission No.", student?.admissionNo ?? "—"],
+        ["Class", student?.className ?? "—"],
+        ["Payment method", PAYMENT_METHOD_LABELS[payment.method]],
+        ["Reference", payment.reference],
+        ["Invoice total", formatPdfMoney(invoice?.totalAmount ?? payment.amount)],
+        ["Amount paid now", formatPdfMoney(payment.amount)],
+        ["Total paid on invoice", formatPdfMoney(invoice?.amountPaid ?? payment.amount)],
+        ["Balance remaining", formatPdfMoney(invoice?.balance ?? 0)],
+        ["Status", stamp.label],
+      ]);
+      pdf.paragraph(
+        `Received by ${payment.recordedBy}. ${settings.address}. ${settings.phone}. Keep this receipt for your records.`
+      );
+      pdf.save(`${payment.receiptNo}.pdf`);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handlePrint = () => {
-    const content = printRef.current;
-    if (!content) return;
     const win = window.open("", "_blank");
     if (!win) return;
     win.document.write(`
       <html><head><title>Receipt ${payment.receiptNo}</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 40px; max-width: 600px; margin: 0 auto; }
-        h1 { color: #059669; margin-bottom: 4px; }
-        .meta { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+        body { font-family: Arial, sans-serif; padding: 40px; max-width: 640px; margin: 0 auto; color: #0f172a; }
+        h1 { margin-bottom: 4px; font-size: 22px; }
+        .meta { color: #64748b; font-size: 13px; margin-bottom: 24px; }
         table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-        td { padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
-        .total { font-size: 18px; font-weight: bold; }
-        .footer { margin-top: 32px; font-size: 12px; color: #64748b; }
-      </style></head><body>${content.innerHTML}</body></html>
+        td { padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+        .total { font-size: 16px; font-weight: bold; }
+        .wrap { position: relative; }
+        .stamp { position: absolute; inset: 80px 0 0 0; display: flex; align-items: center; justify-content: center;
+          font-size: 64px; font-weight: 900; letter-spacing: 8px; transform: rotate(-28deg); opacity: 0.16;
+          color: ${stamp.label === "PAID" ? "#059669" : "#d97706"}; pointer-events: none; }
+        .footer { margin-top: 28px; font-size: 12px; color: #64748b; }
+      </style></head>
+      <body>
+        <div class="wrap">
+          <div class="stamp">${stamp.label}</div>
+          <h1>${settings.schoolName}</h1>
+          <p class="meta">Official Fee Payment Receipt · ${stamp.label}</p>
+          <table>
+            <tr><td>Receipt No.</td><td style="text-align:right;font-weight:600">${payment.receiptNo}</td></tr>
+            <tr><td>Invoice No.</td><td style="text-align:right">${invoice?.invoiceNo ?? "—"}</td></tr>
+            <tr><td>Date</td><td style="text-align:right">${new Date(payment.paidAt).toLocaleString()}</td></tr>
+            <tr><td>Student</td><td style="text-align:right">${student?.name ?? "—"}</td></tr>
+            <tr><td>Admission No.</td><td style="text-align:right">${student?.admissionNo ?? "—"}</td></tr>
+            <tr><td>Class</td><td style="text-align:right">${student?.className ?? "—"}</td></tr>
+            <tr><td>Payment Method</td><td style="text-align:right">${PAYMENT_METHOD_LABELS[payment.method]}</td></tr>
+            <tr><td>Reference</td><td style="text-align:right">${payment.reference}</td></tr>
+            <tr><td>Invoice total</td><td style="text-align:right">${formatCurrency(invoice?.totalAmount ?? payment.amount)}</td></tr>
+            <tr><td class="total">Amount paid</td><td class="total" style="text-align:right">${formatCurrency(payment.amount)}</td></tr>
+            <tr><td>Balance remaining</td><td style="text-align:right">${formatCurrency(invoice?.balance ?? 0)}</td></tr>
+          </table>
+          <p class="footer">Received by: ${payment.recordedBy}<br/>${settings.address} · ${settings.phone}</p>
+        </div>
+      </body></html>
     `);
     win.document.close();
+    win.focus();
     win.print();
   };
 
@@ -48,35 +120,85 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
           </button>
         </div>
 
-        <div ref={printRef} className="p-6">
-          <h1 className="text-xl font-bold text-emerald-700">M-Scholar Demo Academy</h1>
-          <p className="meta text-sm text-slate-500">Official Fee Payment Receipt</p>
+        <div className="relative overflow-hidden p-6">
+          <div className={`pointer-events-none absolute inset-0 flex items-center justify-center ${stamp.tone}`}>
+            <span className="rotate-[-28deg] text-6xl font-black tracking-[0.35em]">{stamp.label}</span>
+          </div>
+          <h1 className="text-xl font-bold text-slate-900">{settings.schoolName}</h1>
+          <p className="text-sm text-slate-500">Official fee payment receipt</p>
+          <p
+            className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+              stamp.label === "PAID" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+            }`}
+          >
+            {stamp.label}
+          </p>
 
-          <table>
+          <table className="relative mt-4 w-full text-sm">
             <tbody>
-              <tr><td>Receipt No.</td><td className="text-right font-medium">{payment.receiptNo}</td></tr>
-              <tr><td>Date</td><td className="text-right">{new Date(payment.paidAt).toLocaleString()}</td></tr>
-              <tr><td>Student</td><td className="text-right">{student?.name ?? "—"}</td></tr>
-              <tr><td>Admission No.</td><td className="text-right">{student?.admissionNo ?? "—"}</td></tr>
-              <tr><td>Class</td><td className="text-right">{student?.className ?? "—"}</td></tr>
-              <tr><td>Payment Method</td><td className="text-right">{PAYMENT_METHOD_LABELS[payment.method]}</td></tr>
-              <tr><td>Reference</td><td className="text-right">{payment.reference}</td></tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-2 text-slate-500">Receipt No.</td>
+                <td className="py-2 text-right font-medium">{payment.receiptNo}</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-2 text-slate-500">Invoice No.</td>
+                <td className="py-2 text-right">{invoice?.invoiceNo ?? "—"}</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-2 text-slate-500">Date</td>
+                <td className="py-2 text-right">{new Date(payment.paidAt).toLocaleString()}</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-2 text-slate-500">Student</td>
+                <td className="py-2 text-right">{student?.name ?? "—"}</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-2 text-slate-500">Admission No.</td>
+                <td className="py-2 text-right">{student?.admissionNo ?? "—"}</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-2 text-slate-500">Class</td>
+                <td className="py-2 text-right">{student?.className ?? "—"}</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-2 text-slate-500">Payment method</td>
+                <td className="py-2 text-right">{PAYMENT_METHOD_LABELS[payment.method]}</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-2 text-slate-500">Reference</td>
+                <td className="py-2 text-right">{payment.reference}</td>
+              </tr>
+              <tr className="border-b border-slate-100">
+                <td className="py-2 font-semibold">Amount paid</td>
+                <td className="py-2 text-right font-semibold text-emerald-700">{formatCurrency(payment.amount)}</td>
+              </tr>
               <tr>
-                <td className="total">Amount Paid</td>
-                <td className="total text-right text-emerald-700">{formatCurrency(payment.amount)}</td>
+                <td className="py-2 text-slate-500">Balance remaining</td>
+                <td className="py-2 text-right">{formatCurrency(invoice?.balance ?? 0)}</td>
               </tr>
             </tbody>
           </table>
 
-          <p className="footer text-xs text-slate-500">
-            Received by: {payment.recordedBy}<br />
-            Thank you for your payment. Keep this receipt for your records.
+          <p className="relative mt-6 text-xs text-slate-500">
+            Received by: {payment.recordedBy}
+            <br />
+            Keep this PDF receipt for your records.
           </p>
         </div>
 
-        <div className="flex gap-3 border-t border-slate-100 p-4">
-          <button onClick={handlePrint} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
-            <Printer className="h-4 w-4" /> Print / Save PDF
+        <div className="flex flex-col gap-2 border-t border-slate-100 p-4 sm:flex-row">
+          <button
+            onClick={downloadPdf}
+            disabled={busy}
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            <Download className="h-4 w-4" /> Download PDF
+          </button>
+          <button
+            onClick={handlePrint}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Printer className="h-4 w-4" /> Print
           </button>
           <button onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm">
             Close
@@ -87,24 +209,23 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
   );
 }
 
-export function downloadCsv(filename: string, headers: string[], rows: string[][]) {
-  const csv = [headers.join(","), ...rows.map((r) => r.map((c) => `"${c}"`).join(","))].join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-export function ExportButton({ onClick, label = "Export CSV" }: { onClick: () => void; label?: string }) {
+export function PdfCsvButtons({ onPdf, onCsv }: { onPdf: () => void; onCsv: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-    >
-      <Download className="h-4 w-4" /> {label}
-    </button>
+    <div className="flex shrink-0 gap-2">
+      <button
+        type="button"
+        onClick={onPdf}
+        className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+      >
+        <Download className="h-4 w-4" /> PDF
+      </button>
+      <button
+        type="button"
+        onClick={onCsv}
+        className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+      >
+        CSV
+      </button>
+    </div>
   );
 }

@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef } from "react";
-import { Printer, X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import type { TermResult } from "@m-scholar/shared";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useAcademicStore } from "@/lib/academic-store";
-import { TERM } from "@/lib/academic-store";
+import { useSchoolStore } from "@/lib/school-store";
+import { SimplePdf } from "@/lib/pdf";
 
 interface ReportCardModalProps {
   studentId: string;
@@ -13,10 +13,12 @@ interface ReportCardModalProps {
 }
 
 export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
-  const printRef = useRef<HTMLDivElement>(null);
   const getStudent = useFinanceStore((s) => s.getStudent);
   const getResultsForStudent = useAcademicStore((s) => s.getResultsForStudent);
   const getAttendanceSummary = useAcademicStore((s) => s.getAttendanceSummary);
+  const settings = useSchoolStore((s) => s.settings);
+  const classes = useSchoolStore((s) => s.classes);
+  const users = useSchoolStore((s) => s.users);
 
   const student = getStudent(studentId);
   const results = getResultsForStudent(studentId).filter((r) => r.status === "published");
@@ -24,19 +26,34 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
   const average = results.length
     ? Math.round(results.reduce((s, r) => s + r.totalScore, 0) / results.length)
     : 0;
+  const classRec = classes.find((c) => c.name === student?.className);
+  const teacher = users.find((u) => u.id === classRec?.teacherId)?.name ?? "Class Teacher";
 
-  const handlePrint = () => {
-    const content = printRef.current;
-    if (!content) return;
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(`<html><head><title>Report Card</title>
-      <style>body{font-family:Arial,sans-serif;padding:40px;max-width:700px;margin:0 auto}
-      h1{color:#2563eb}table{width:100%;border-collapse:collapse;margin:16px 0}
-      th,td{padding:8px;border:1px solid #e2e8f0;text-align:left}th{background:#f8fafc}
-      </style></head><body>${content.innerHTML}</body></html>`);
-    win.document.close();
-    win.print();
+  const downloadPdf = () => {
+    const pdf = new SimplePdf();
+    pdf.heading(
+      settings.schoolName,
+      `Terminal report card — ${settings.term} · ${settings.session}`
+    );
+    pdf.keyValues([
+      ["Name", student?.name ?? "—"],
+      ["Admission No.", student?.admissionNo ?? "—"],
+      ["Class", student?.className ?? "—"],
+      ["Attendance", `${attendance.percent}%`],
+      ["Overall average", `${average}%`],
+    ]);
+    pdf.table(
+      ["Subject", "CA", "Exam", "Total", "Grade"],
+      results.map((r: TermResult) => [
+        r.subject,
+        String(r.caScore),
+        String(r.examScore),
+        String(r.totalScore),
+        r.grade,
+      ])
+    );
+    pdf.paragraph(`Class teacher: ${teacher}. ${settings.address}. This official report is issued as a PDF.`);
+    pdf.save(`${student?.admissionNo ?? "report-card"}-report-card.pdf`);
   };
 
   return (
@@ -46,9 +63,11 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
           <h3 className="font-display font-semibold">Report Card</h3>
           <button onClick={onClose} className="rounded-lg p-1 hover:bg-slate-100"><X className="h-5 w-5" /></button>
         </div>
-        <div ref={printRef} className="p-6">
-          <h1 className="text-xl font-bold text-blue-600">M-Scholar Demo Academy</h1>
-          <p className="text-sm text-slate-500">Terminal Report — {TERM}</p>
+        <div className="p-6">
+          <h1 className="text-xl font-bold text-blue-600">{settings.schoolName}</h1>
+          <p className="text-sm text-slate-500">
+            Terminal Report — {settings.term} · {settings.session}
+          </p>
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
             <p><strong>Name:</strong> {student?.name}</p>
             <p><strong>Admission No:</strong> {student?.admissionNo}</p>
@@ -58,27 +77,34 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
           <table className="mt-6 w-full text-sm">
             <thead>
               <tr>
-                <th>Subject</th><th>CA</th><th>Exam</th><th>Total</th><th>Grade</th>
+                <th className="border border-slate-200 bg-slate-50 px-2 py-2 text-left">Subject</th>
+                <th className="border border-slate-200 bg-slate-50 px-2 py-2 text-left">CA</th>
+                <th className="border border-slate-200 bg-slate-50 px-2 py-2 text-left">Exam</th>
+                <th className="border border-slate-200 bg-slate-50 px-2 py-2 text-left">Total</th>
+                <th className="border border-slate-200 bg-slate-50 px-2 py-2 text-left">Grade</th>
               </tr>
             </thead>
             <tbody>
               {results.map((r: TermResult) => (
                 <tr key={r.id}>
-                  <td>{r.subject}</td>
-                  <td>{r.caScore}</td>
-                  <td>{r.examScore}</td>
-                  <td>{r.totalScore}</td>
-                  <td>{r.grade}</td>
+                  <td className="border border-slate-200 px-2 py-2">{r.subject}</td>
+                  <td className="border border-slate-200 px-2 py-2">{r.caScore}</td>
+                  <td className="border border-slate-200 px-2 py-2">{r.examScore}</td>
+                  <td className="border border-slate-200 px-2 py-2">{r.totalScore}</td>
+                  <td className="border border-slate-200 px-2 py-2">{r.grade}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <p className="mt-4 font-semibold">Overall Average: {average}%</p>
-          <p className="mt-6 text-xs text-slate-500">Class Teacher: Emeka Nwosu · Principal: M-Scholar Academy</p>
+          <p className="mt-6 text-xs text-slate-500">Class Teacher: {teacher}</p>
         </div>
         <div className="border-t p-4">
-          <button onClick={handlePrint} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">
-            <Printer className="h-4 w-4" /> Print / Save PDF
+          <button
+            onClick={downloadPdf}
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            <Download className="h-4 w-4" /> Download PDF
           </button>
         </div>
       </div>
