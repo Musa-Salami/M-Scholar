@@ -1,5 +1,12 @@
 {
   "projects": {
-    "default": "mscholar"
+    "default": "mscholar-sms"
+  },
+  "targets": {
+    "mscholar-sms": {
+      "hosting": {
+        "mscholar": ["mscholar"]
+      }
+    }
   }
 }
