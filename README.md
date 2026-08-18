@@ -40,8 +40,8 @@ Open **School Portal** from the website header, or go to `/login`.
 |--------|-----------|---------------|
 | Parent & Student | `/login/family` | `/portal/*` |
 | Teacher | `/login/teacher` | `/teacher/*` |
-| Admin | `/login/admin` | `/admin/*` |
-| Finance Officer | `/login/finance` | `/finance/*` |
+
+Admin (`/login/admin`) and Finance Officer (`/login/finance`) are not listed on School Portal. Use the discreet shield and wallet icons in the website footer.
 
 ### Demo accounts
 
