@@ -6,12 +6,12 @@ import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { btnPrimary, selectClass } from "@/components/finance-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { useFinanceStore } from "@/lib/finance-store";
+import { useClassStudents } from "@/hooks/use-class-students";
 import { useAcademicStore, TEACHER_CLASS, SUBJECTS } from "@/lib/academic-store";
 
 export default function TeacherAssessmentsPage() {
   useRequireAuth(["class_teacher"]);
-  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.className === TEACHER_CLASS));
+  const students = useClassStudents();
   const { assessments, setScore, getScoresForAssessment, computeTermResults, termResults, publishResults } = useAcademicStore();
   const [subject, setSubject] = useState<string>(SUBJECTS[0]);
   const [toast, setToast] = useState("");

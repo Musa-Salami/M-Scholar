@@ -8,9 +8,8 @@ import { PageHeader } from "@/components/dashboard-ui";
 import { FormField, inputClass, selectClass, btnPrimary, btnSecondary } from "@/components/finance-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useAuthStore } from "@/lib/auth-store";
-import { useFinanceStore } from "@/lib/finance-store";
+import { useClassStudents } from "@/hooks/use-class-students";
 import { useCommsStore } from "@/lib/comms-store";
-import { TEACHER_CLASS } from "@/lib/academic-store";
 import { cn } from "@/lib/utils";
 
 const PRIORITY_STYLES: Record<NotePriority, string> = {
@@ -22,7 +21,7 @@ const PRIORITY_STYLES: Record<NotePriority, string> = {
 export default function TeacherNotesPage() {
   useRequireAuth(["class_teacher"]);
   const { user } = useAuthStore();
-  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.className === TEACHER_CLASS));
+  const students = useClassStudents();
   const { notes, addNote } = useCommsStore();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ studentId: students[0]?.id ?? "", title: "", body: "", priority: "info" as NotePriority });

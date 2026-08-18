@@ -17,10 +17,10 @@ export function useRequireAuth(allowedRoles?: UserRole[]) {
       window.location.replace("/login/");
       return;
     }
-    if (rolesKey && allowedRoles && !allowedRoles.includes(user.role)) {
+    if (rolesKey && !rolesKey.split(",").includes(user.role)) {
       window.location.replace("/login/");
     }
-  }, [ready, isAuthenticated, user, rolesKey, allowedRoles]);
+  }, [ready, isAuthenticated, user, rolesKey]);
 
   return { user, isAuthenticated, ready };
 }

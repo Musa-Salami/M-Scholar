@@ -7,15 +7,14 @@ import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useAuthStore } from "@/lib/auth-store";
-import { useFinanceStore } from "@/lib/finance-store";
+import { useClassStudents } from "@/hooks/use-class-students";
 import { useCommsStore } from "@/lib/comms-store";
-import { TEACHER_CLASS } from "@/lib/academic-store";
 import { cn } from "@/lib/utils";
 
 export default function TeacherMessagesPage() {
   useRequireAuth(["class_teacher"]);
   const { user } = useAuthStore();
-  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.className === TEACHER_CLASS));
+  const students = useClassStudents();
   const { threads, getMessages, sendMessage, getOrCreateThread } = useCommsStore();
   const [activeThread, setActiveThread] = useState(threads[0]?.id ?? "");
   const [body, setBody] = useState("");

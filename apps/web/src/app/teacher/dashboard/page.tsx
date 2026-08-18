@@ -5,17 +5,17 @@ import { TEACHER_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader, StatCard } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { useFinanceStore } from "@/lib/finance-store";
+import { useClassStudents } from "@/hooks/use-class-students";
 import { useAcademicStore, TEACHER_CLASS } from "@/lib/academic-store";
 import { useCommsStore } from "@/lib/comms-store";
 
 export default function TeacherDashboardPage() {
   const { ready } = useRequireAuth(["class_teacher"]);
-  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.className === TEACHER_CLASS));
-  const registers = useAcademicStore((s) => s.registers ?? []);
-  const termResults = useAcademicStore((s) => s.termResults ?? []);
-  const notes = useCommsStore((s) => s.notes ?? []);
-  const messages = useCommsStore((s) => s.messages ?? []);
+  const students = useClassStudents();
+  const registers = useAcademicStore((s) => s.registers);
+  const termResults = useAcademicStore((s) => s.termResults);
+  const notes = useCommsStore((s) => s.notes);
+  const messages = useCommsStore((s) => s.messages);
 
   if (!ready) {
     return (
@@ -26,13 +26,13 @@ export default function TeacherDashboardPage() {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const todayReg = registers.find((r) => r.className === TEACHER_CLASS && r.date === today);
+  const todayReg = (registers ?? []).find((r) => r.className === TEACHER_CLASS && r.date === today);
   const todayRecords = todayReg?.records ?? [];
   const absentToday = todayRecords.filter((r) => r.status === "absent").length;
   const presentToday = todayReg ? todayRecords.length - absentToday : students.length;
-  const draftResults = termResults.filter((r) => r.status === "draft" && students.some((s) => s.id === r.studentId)).length;
-  const classNotes = notes.filter((n) => students.some((s) => s.id === n.studentId)).length;
-  const unreadMsgs = messages.filter((m) => m.senderRole === "parent" && !m.readAt).length;
+  const draftResults = (termResults ?? []).filter((r) => r.status === "draft" && students.some((s) => s.id === r.studentId)).length;
+  const classNotes = (notes ?? []).filter((n) => students.some((s) => s.id === n.studentId)).length;
+  const unreadMsgs = (messages ?? []).filter((m) => m.senderRole === "parent" && !m.readAt).length;
 
   return (
     <PortalShell navItems={TEACHER_NAV} title="Class Teacher Portal">

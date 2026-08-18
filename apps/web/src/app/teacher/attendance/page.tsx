@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/dashboard-ui";
 import { btnPrimary } from "@/components/finance-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useAuthStore } from "@/lib/auth-store";
-import { useFinanceStore } from "@/lib/finance-store";
+import { useClassStudents } from "@/hooks/use-class-students";
 import { useAcademicStore, TEACHER_CLASS } from "@/lib/academic-store";
 import { cn } from "@/lib/utils";
 
@@ -23,13 +23,15 @@ const STATUS_COLORS: Record<AttendanceStatus, string> = {
 export default function TeacherAttendancePage() {
   useRequireAuth(["class_teacher"]);
   const { user } = useAuthStore();
-  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.className === TEACHER_CLASS));
+  const students = useClassStudents();
   const { getRegister, saveRegister, submitRegister } = useAcademicStore();
 
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const register = getRegister(TEACHER_CLASS, date);
 
   const [marks, setMarks] = useState<Record<string, AttendanceStatus>>({});
+
+  const studentKey = students.map((s) => s.id).join(",");
 
   useEffect(() => {
     if (register) {
@@ -41,7 +43,9 @@ export default function TeacherAttendancePage() {
       students.forEach((s) => { init[s.id] = "present"; });
       setMarks(init);
     }
-  }, [register, date, students]);
+    // studentKey keeps this from looping if the students array is a new reference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [register, date, studentKey]);
 
   const handleSave = () => {
     saveRegister(
