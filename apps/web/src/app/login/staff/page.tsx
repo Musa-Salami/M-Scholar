@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ShieldCheck, Wallet, ArrowLeft } from "lucide-react";
 import { SCHOOL, LOGIN_PORTALS } from "@m-scholar/shared";
+import { pageHref } from "@/lib/paths";
 
 export default function StaffLoginPage() {
   return (
@@ -15,7 +16,7 @@ export default function StaffLoginPage() {
         <p className="mt-2 text-slate-500">Choose Admin or Finance Officer</p>
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           <Link
-            href={LOGIN_PORTALS.admin.href}
+            href={pageHref(LOGIN_PORTALS.admin.href)}
             className="card-shadow rounded-2xl border-2 border-violet-200 bg-white p-8 transition hover:-translate-y-1 hover:border-violet-400 hover:bg-violet-50"
           >
             <ShieldCheck className="h-10 w-10 text-violet-700" />
@@ -23,7 +24,7 @@ export default function StaffLoginPage() {
             <p className="mt-2 text-sm text-slate-600">{LOGIN_PORTALS.admin.description}</p>
           </Link>
           <Link
-            href={LOGIN_PORTALS.finance.href}
+            href={pageHref(LOGIN_PORTALS.finance.href)}
             className="card-shadow rounded-2xl border-2 border-emerald-200 bg-white p-8 transition hover:-translate-y-1 hover:border-emerald-400 hover:bg-emerald-50"
           >
             <Wallet className="h-10 w-10 text-emerald-700" />

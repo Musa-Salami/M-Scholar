@@ -8,12 +8,20 @@ export default function NotFound() {
       <p className="mt-2 max-w-md text-slate-500">
         This page does not exist, or the link may be outdated.
       </p>
-      <Link
-        href="/"
-        className="mt-6 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
-      >
-        Back to school website
-      </Link>
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        <Link
+          href="/"
+          className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          Back to school website
+        </Link>
+        <Link
+          href="/login/"
+          className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          School Portal
+        </Link>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { GraduationCap, BookOpen, ArrowLeft } from "lucide-react";
 import { SCHOOL, LOGIN_PORTALS } from "@m-scholar/shared";
+import { pageHref } from "@/lib/paths";
 
 const PUBLIC_PORTALS = [
   { key: "family" as const, icon: GraduationCap, color: "border-sky-200 hover:border-sky-400 hover:bg-sky-50" },
@@ -25,7 +26,7 @@ export default function LoginChooserPage() {
             return (
               <Link
                 key={key}
-                href={portal.href}
+                href={pageHref(portal.href)}
                 className={`card-shadow rounded-2xl border-2 bg-white p-8 transition hover:-translate-y-1 ${color}`}
               >
                 <Icon className="h-10 w-10 text-slate-700" />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SCHOOL, PUBLIC_NAV } from "@m-scholar/shared";
 import { Mail, Phone, MapPin, ShieldCheck, Wallet } from "lucide-react";
+import { pageHref, telHref, mailtoHref } from "@/lib/paths";
 
 export function SiteFooter() {
   return (
@@ -10,17 +11,38 @@ export function SiteFooter() {
           <p className="font-display text-xl font-bold text-white">{SCHOOL.name}</p>
           <p className="mt-2 text-sm text-slate-400">{SCHOOL.tagline}</p>
           <ul className="mt-4 space-y-2 text-sm">
-            <li className="flex items-center gap-2"><MapPin className="h-4 w-4 shrink-0" />{SCHOOL.address}</li>
-            <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" />{SCHOOL.phone}</li>
-            <li className="flex items-center gap-2"><Mail className="h-4 w-4 shrink-0" />{SCHOOL.email}</li>
+            <li className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 shrink-0" />
+              <a
+                href={`https://maps.google.com/?q=${encodeURIComponent(SCHOOL.address)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-white"
+              >
+                {SCHOOL.address}
+              </a>
+            </li>
+            <li className="flex items-center gap-2">
+              <Phone className="h-4 w-4 shrink-0" />
+              <a href={telHref(SCHOOL.phone)} className="hover:text-white">{SCHOOL.phone}</a>
+            </li>
+            <li className="flex items-center gap-2">
+              <Mail className="h-4 w-4 shrink-0" />
+              <a href={mailtoHref(SCHOOL.email)} className="hover:text-white">{SCHOOL.email}</a>
+            </li>
           </ul>
         </div>
         <div>
           <p className="font-semibold text-white">Quick links</p>
           <ul className="mt-3 space-y-2 text-sm">
             {PUBLIC_NAV.map(({ label, href }) => (
-              <li key={href}><Link href={href} className="hover:text-white">{label}</Link></li>
+              <li key={href}>
+                <Link href={pageHref(href)} className="hover:text-white">{label}</Link>
+              </li>
             ))}
+            <li>
+              <Link href="/login/" className="hover:text-white">School Portal</Link>
+            </li>
           </ul>
         </div>
       </div>

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Bell } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useNotificationStore } from "@/lib/notification-store";
+import { pageHref } from "@/lib/paths";
 
 export function NotificationBell() {
   const user = useAuthStore((s) => s.user);
@@ -21,6 +21,7 @@ export function NotificationBell() {
   return (
     <div className="relative">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
         className="relative rounded-xl p-2 hover:bg-slate-100"
         aria-label="Notifications"
@@ -40,7 +41,7 @@ export function NotificationBell() {
             <div className="flex items-center justify-between border-b px-4 py-3">
               <span className="font-semibold text-slate-900">Notifications</span>
               {unread > 0 && (
-                <button onClick={() => markAllRead(user.email)} className="text-xs text-blue-600 hover:underline">
+                <button type="button" onClick={() => markAllRead(user.email)} className="text-xs text-blue-600 hover:underline">
                   Mark all read
                 </button>
               )}
@@ -50,9 +51,9 @@ export function NotificationBell() {
                 <p className="p-4 text-sm text-slate-500">No notifications yet.</p>
               ) : (
                 items.map((n) => (
-                  <Link
+                  <a
                     key={n.id}
-                    href={n.href}
+                    href={pageHref(n.href)}
                     onClick={() => {
                       markRead(n.id);
                       setOpen(false);
@@ -61,7 +62,7 @@ export function NotificationBell() {
                   >
                     <p className="text-sm font-medium text-slate-900">{n.title}</p>
                     <p className="text-xs text-slate-500 line-clamp-2">{n.body}</p>
-                  </Link>
+                  </a>
                 ))
               )}
             </div>

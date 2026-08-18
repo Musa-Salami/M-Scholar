@@ -8,6 +8,7 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useClassStudents } from "@/hooks/use-class-students";
 import { useAcademicStore, TEACHER_CLASS } from "@/lib/academic-store";
 import { useCommsStore } from "@/lib/comms-store";
+import { pageHref } from "@/lib/paths";
 
 export default function TeacherDashboardPage() {
   const { ready } = useRequireAuth(["class_teacher"]);
@@ -42,6 +43,22 @@ export default function TeacherDashboardPage() {
         <StatCard title="Present Today" value={String(presentToday)} change={`${absentToday} absent`} icon={ClipboardCheck} accent="emerald" />
         <StatCard title="Draft Results" value={String(draftResults)} icon={BookOpen} accent="blue" />
         <StatCard title="Notes / Messages" value={`${classNotes} / ${unreadMsgs}`} icon={StickyNote} accent="violet" />
+      </div>
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Take attendance", href: "/teacher/attendance" },
+          { label: "Enter assessments", href: "/teacher/assessments" },
+          { label: "Write notes", href: "/teacher/notes" },
+          { label: "Messages", href: "/teacher/messages" },
+        ].map(({ label, href }) => (
+          <a
+            key={href}
+            href={pageHref(href)}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-amber-200 hover:bg-amber-50"
+          >
+            {label}
+          </a>
+        ))}
       </div>
     </PortalShell>
   );

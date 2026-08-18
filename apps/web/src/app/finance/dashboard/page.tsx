@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/finance-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useFinanceStore } from "@/lib/finance-store";
 import { formatCurrency } from "@/lib/utils";
+import { pageHref } from "@/lib/paths";
 
 export default function FinanceDashboardPage() {
   const { ready } = useRequireAuth(["account_officer"]);
@@ -45,6 +46,23 @@ export default function FinanceDashboardPage() {
         <StatCard title="Payroll Due" value={formatCurrency(s.payrollDue)} change="Monthly estimate" icon={Wallet} accent="amber" />
       </div>
 
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Record payments", href: "/finance/payments" },
+          { label: "Fee structures", href: "/finance/fees" },
+          { label: "Payroll", href: "/finance/payroll" },
+          { label: "Reports", href: "/finance/reports" },
+        ].map(({ label, href }) => (
+          <a
+            key={href}
+            href={pageHref(href)}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-emerald-200 hover:bg-emerald-50"
+          >
+            {label}
+          </a>
+        ))}
+      </div>
+
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="card-shadow rounded-2xl border border-slate-100 bg-white p-6">
           <h3 className="font-display font-semibold text-slate-900">Recent payments</h3>
@@ -55,7 +73,9 @@ export default function FinanceDashboardPage() {
                 <div key={pay.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
                   <div>
                     <p className="text-sm font-medium text-slate-900">{student?.name}</p>
-                    <p className="text-xs text-slate-500">{pay.receiptNo}</p>
+                    <a href={pageHref("/finance/payments")} className="text-xs text-emerald-700 hover:underline">
+                      {pay.receiptNo}
+                    </a>
                   </div>
                   <span className="font-semibold text-emerald-700">{formatCurrency(pay.amount)}</span>
                 </div>

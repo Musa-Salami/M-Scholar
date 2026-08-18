@@ -7,6 +7,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { useAuthReady } from "@/hooks/use-auth-ready";
 import { DEMO_USERS, ROLE_DASHBOARD_PATH, SCHOOL, LOGIN_PORTALS, type LoginPortal, type UserRole } from "@m-scholar/shared";
 import { cn } from "@/lib/utils";
+import { pageHref } from "@/lib/paths";
 
 const ACCENT: Record<LoginPortal, { btn: string; ring: string; bg: string }> = {
   family: { btn: "bg-sky-600 hover:bg-sky-700", ring: "focus:ring-sky-500", bg: "from-sky-600 to-sky-800" },
@@ -38,7 +39,7 @@ export function LoginForm({ portal }: LoginFormProps) {
     if (!ready) return;
     if (isAuthenticated && user && allowedRoles.includes(user.role)) {
       const path = ROLE_DASHBOARD_PATH[user.role];
-      window.location.replace(path.endsWith("/") ? path : `${path}/`);
+      window.location.replace(pageHref(path));
     }
   }, [ready, isAuthenticated, user, allowedRoles]);
 
@@ -63,7 +64,7 @@ export function LoginForm({ portal }: LoginFormProps) {
       return;
     }
     const path = ROLE_DASHBOARD_PATH[loggedInUser.role];
-    window.location.assign(path.endsWith("/") ? path : `${path}/`);
+    window.location.assign(pageHref(path));
   };
 
   return (

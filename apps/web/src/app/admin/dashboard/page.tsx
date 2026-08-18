@@ -10,6 +10,7 @@ import { useFinanceStore } from "@/lib/finance-store";
 import { useSchoolStore } from "@/lib/school-store";
 import { useAcademicStore } from "@/lib/academic-store";
 import { useDataModeStore } from "@/lib/bootstrap-data";
+import { pageHref } from "@/lib/paths";
 
 function formatSavedAt(value: string | null) {
   if (!value) return "Not saved yet";
@@ -133,13 +134,13 @@ export default function AdminDashboardPage() {
           <div className="mt-4 grid grid-cols-2 gap-3">
             {[
               { label: "Add user", href: "/admin/users" },
+              { label: "Enroll students", href: "/admin/students" },
               { label: "Manage classes", href: "/admin/classes" },
               { label: "School settings", href: "/admin/settings" },
-              { label: "View audit log", href: "/admin/audit" },
             ].map(({ label, href }) => (
               <a
                 key={label}
-                href={href}
+                href={pageHref(href)}
                 className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:border-violet-200 hover:bg-violet-50"
               >
                 {label}

@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/auth-store";
 import { NotificationBell } from "@/components/notification-bell";
 import { useAuthReady } from "@/hooks/use-auth-ready";
+import { pageHref } from "@/lib/paths";
 
 const ICONS: Record<string, LucideIcon> = {
   LayoutDashboard,
@@ -129,7 +130,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
             return (
               <a
                 key={item.href}
-                href={item.href.endsWith("/") ? item.href : `${item.href}/`}
+                href={pageHref(item.href)}
                 className={cn(
                   "flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50",
                   active && accent.active
@@ -198,7 +199,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
                   return (
                     <a
                       key={item.href}
-                      href={item.href.endsWith("/") ? item.href : `${item.href}/`}
+                      href={pageHref(item.href)}
                       onClick={() => setMobileOpen(false)}
                       className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
                     >
@@ -207,6 +208,19 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
                     </a>
                   );
                 })}
+                <Link href="/" className="mt-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
+                  School website
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    window.location.href = "/login/";
+                  }}
+                  className="rounded-xl px-3 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+                >
+                  Sign out
+                </button>
               </nav>
             </aside>
           </div>

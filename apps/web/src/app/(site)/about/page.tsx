@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SCHOOL } from "@m-scholar/shared";
 import { ArrowRight } from "lucide-react";
+import { pageHref } from "@/lib/paths";
 
 export default function AboutPage() {
   return (
@@ -31,11 +32,16 @@ export default function AboutPage() {
             { title: "Academic Excellence", desc: `${SCHOOL.stats.passRate} WAEC pass rate with distinguished performances.` },
             { title: "Experienced Faculty", desc: `${SCHOOL.stats.teachers} qualified and dedicated teachers.` },
             { title: "Modern Facilities", desc: "Well-equipped labs, library, sports fields, and ICT centre." },
-            { title: "Parent Partnership", desc: "Active parent-teacher communication through our digital portal." },
-          ].map(({ title, desc }) => (
+            { title: "Parent Partnership", desc: "Active parent-teacher communication through our digital portal.", href: "/login/" },
+          ].map(({ title, desc, href }) => (
             <div key={title} className="card-shadow rounded-2xl border border-slate-100 bg-white p-6">
               <h3 className="font-display font-bold text-slate-900">{title}</h3>
               <p className="mt-1 text-sm text-slate-600">{desc}</p>
+              {href && (
+                <Link href={pageHref(href)} className="mt-2 inline-block text-sm font-semibold text-blue-600 hover:underline">
+                  Open School Portal
+                </Link>
+              )}
             </div>
           ))}
         </div>
@@ -43,7 +49,7 @@ export default function AboutPage() {
 
       <div className="mt-16 rounded-2xl bg-blue-50 p-8 text-center">
         <p className="font-display text-xl font-bold text-slate-900">Ready to join us?</p>
-        <Link href="/admissions" className="mt-4 inline-flex items-center gap-2 font-semibold text-blue-600 hover:underline">
+        <Link href={pageHref("/admissions")} className="mt-4 inline-flex items-center gap-2 font-semibold text-blue-600 hover:underline">
           View admissions <ArrowRight className="h-4 w-4" />
         </Link>
       </div>

@@ -11,6 +11,7 @@ import { useAcademicStore } from "@/lib/academic-store";
 import { useCommsStore } from "@/lib/comms-store";
 import { useNotificationStore } from "@/lib/notification-store";
 import { formatCurrency } from "@/lib/utils";
+import { pageHref } from "@/lib/paths";
 
 export default function PortalDashboardPage() {
   const { ready } = useRequireAuth(["parent", "student"]);
@@ -60,6 +61,22 @@ export default function PortalDashboardPage() {
         <StatCard title="Fee Balance" value={formatCurrency(feeBalance)} change="Outstanding dues" icon={Receipt} accent="amber" />
         <StatCard title="Latest Grade" value={latest?.grade ?? "—"} change={latest?.subject ?? "Results"} icon={Award} accent="emerald" />
         <StatCard title="Alerts" value={String(unreadNotes + unreadNotifs)} change="Notes & notifications" icon={MessageSquare} accent="violet" />
+      </div>
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: "Attendance", href: "/portal/attendance" },
+          { label: "Fees & receipts", href: "/portal/fees" },
+          { label: "Results", href: "/portal/results" },
+          { label: "Messages", href: "/portal/messages" },
+        ].map(({ label, href }) => (
+          <a
+            key={href}
+            href={pageHref(href)}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-sky-200 hover:bg-sky-50"
+          >
+            {label}
+          </a>
+        ))}
       </div>
     </PortalShell>
   );

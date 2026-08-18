@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, Award } from "lucide-react";
 import { SCHOOL } from "@m-scholar/shared";
+import { pageHref } from "@/lib/paths";
 
 export default function HomePage() {
   return (
@@ -17,10 +18,10 @@ export default function HomePage() {
           </h1>
           <p className="mt-4 max-w-xl text-lg text-blue-100">{SCHOOL.motto} — {SCHOOL.tagline}</p>
           <div className="mt-10 flex flex-wrap gap-4">
-            <Link href="/admissions" className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 font-semibold text-blue-800 hover:bg-blue-50">
+            <Link href={pageHref("/admissions")} className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 font-semibold text-blue-800 hover:bg-blue-50">
               Apply for Admission <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/about" className="inline-flex items-center rounded-xl border border-white/30 px-6 py-3.5 font-semibold text-white hover:bg-white/10">
+            <Link href={pageHref("/about")} className="inline-flex items-center rounded-xl border border-white/30 px-6 py-3.5 font-semibold text-white hover:bg-white/10">
               Learn About Us
             </Link>
           </div>
@@ -54,7 +55,7 @@ export default function HomePage() {
               in a nurturing environment. Our dedicated teachers, modern facilities, and strong parent
               partnership help every child reach their full potential.
             </p>
-            <Link href="/about" className="mt-6 inline-flex items-center gap-2 font-semibold text-blue-600 hover:underline">
+            <Link href={pageHref("/about")} className="mt-6 inline-flex items-center gap-2 font-semibold text-blue-600 hover:underline">
               Read our story <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -74,7 +75,7 @@ export default function HomePage() {
           <Award className="mx-auto h-12 w-12 text-blue-200" />
           <h2 className="mt-4 font-display text-3xl font-bold">Admissions Open for 2025/2026</h2>
           <p className="mx-auto mt-2 max-w-lg text-blue-100">Join our community of learners. Applications are now being accepted for all classes.</p>
-          <Link href="/admissions" className="mt-8 inline-flex rounded-xl bg-white px-8 py-3.5 font-semibold text-blue-700 hover:bg-blue-50">
+          <Link href={pageHref("/admissions")} className="mt-8 inline-flex rounded-xl bg-white px-8 py-3.5 font-semibold text-blue-700 hover:bg-blue-50">
             Start Application
           </Link>
         </div>

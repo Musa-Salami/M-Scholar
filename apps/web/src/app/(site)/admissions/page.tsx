@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SCHOOL } from "@m-scholar/shared";
 import { CheckCircle } from "lucide-react";
+import { pageHref, telHref, mailtoHref } from "@/lib/paths";
 
 export default function AdmissionsPage() {
   return (
@@ -42,9 +43,15 @@ export default function AdmissionsPage() {
           <div className="card-shadow rounded-2xl border border-blue-100 bg-blue-50 p-6">
             <h3 className="font-display font-bold text-slate-900">Apply Now</h3>
             <p className="mt-2 text-sm text-slate-600">Contact our admissions office to begin your application.</p>
-            <p className="mt-4 text-sm"><strong>Phone:</strong> {SCHOOL.phone}</p>
-            <p className="text-sm"><strong>Email:</strong> {SCHOOL.email}</p>
-            <Link href="/contact" className="mt-4 block rounded-xl bg-blue-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-blue-700">
+            <p className="mt-4 text-sm">
+              <strong>Phone:</strong>{" "}
+              <a href={telHref(SCHOOL.phone)} className="text-blue-700 hover:underline">{SCHOOL.phone}</a>
+            </p>
+            <p className="text-sm">
+              <strong>Email:</strong>{" "}
+              <a href={mailtoHref(SCHOOL.email)} className="text-blue-700 hover:underline">{SCHOOL.email}</a>
+            </p>
+            <Link href={pageHref("/contact")} className="mt-4 block rounded-xl bg-blue-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-blue-700">
               Contact Admissions
             </Link>
           </div>

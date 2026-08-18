@@ -1,4 +1,6 @@
 import { SUBJECTS } from "@m-scholar/shared";
+import Link from "next/link";
+import { pageHref } from "@/lib/paths";
 
 export default function AcademicsPage() {
   return (
@@ -28,7 +30,11 @@ export default function AcademicsPage() {
         <h2 className="font-display text-xl font-bold text-slate-900">Assessment & Reporting</h2>
         <p className="mt-2 text-slate-600">
           Continuous Assessment (CA) combined with end-of-term examinations. Parents and students
-          access results, attendance, and teacher feedback through the school portal in real time.
+          access results, attendance, and teacher feedback through the{" "}
+          <Link href={pageHref("/login")} className="font-semibold text-blue-600 hover:underline">
+            school portal
+          </Link>{" "}
+          in real time.
         </p>
       </div>
     </div>
