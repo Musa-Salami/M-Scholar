@@ -21,16 +21,35 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and sign in with a demo account on the login page.
+Open [http://localhost:3000](http://localhost:3000) for the public school website.
+
+### Public website (everyone)
+| Page | URL |
+|------|-----|
+| Home | `/` |
+| About | `/about` |
+| Academics | `/academics` |
+| Admissions | `/admissions` |
+| News & Events | `/news` |
+| Contact | `/contact` |
+
+### Portal logins (authenticated users)
+| Role | Login URL | Portal after sign-in |
+|------|-----------|----------------------|
+| Student | `/login/student` | `/portal/*` |
+| Teacher | `/login/teacher` | `/teacher/*` |
+| Parent | `/login/parent` | `/portal/*` |
+| Staff (Admin/Finance) | `/login/staff` | `/admin/*` or `/finance/*` |
 
 ### Demo accounts
 
 | Role | Email | Password |
 |------|-------|----------|
+| Student | student@mscholar.app | student123 |
+| Parent | parent@mscholar.app | parent123 |
+| Class Teacher | teacher@mscholar.app | teacher123 |
 | Super Admin | admin@mscholar.app | admin123 |
 | Account Officer | finance@mscholar.app | finance123 |
-| Class Teacher | teacher@mscholar.app | teacher123 |
-| Parent | parent@mscholar.app | parent123 |
 
 ## Build & Deploy
 

@@ -1,5 +1,6 @@
 export * from "./finance";
 export * from "./academic";
+export * from "./school";
 
 export type UserRole =
   | "super_admin"
@@ -122,6 +123,16 @@ export const DEMO_USERS: Record<string, { password: string; user: AuthUser }> = 
       firstName: "Fatima",
       lastName: "Bello",
       role: "parent",
+    },
+  },
+  "student@mscholar.app": {
+    password: "student123",
+    user: {
+      id: "5",
+      email: "student@mscholar.app",
+      firstName: "Amina",
+      lastName: "Bello",
+      role: "student",
     },
   },
 };

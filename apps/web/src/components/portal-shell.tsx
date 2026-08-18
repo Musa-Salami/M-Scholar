@@ -102,11 +102,14 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
       {/* Desktop sidebar */}
       <aside className="hidden w-64 flex-col lg:flex">
         <div className={cn("gradient-brand bg-gradient-to-b p-6 text-white", accent.sidebar)}>
-          <Link href="/" className="block">
-            <span className="font-display text-xl font-extrabold tracking-tight">
-              M-Scholar
-            </span>
-          </Link>
+            <Link href="/" className="block">
+              <span className="font-display text-xl font-extrabold tracking-tight">
+                Portal
+              </span>
+            </Link>
+            <Link href="/" className="mt-1 block text-xs text-white/70 hover:text-white">
+              ← School website
+            </Link>
           <p className="mt-1 text-sm text-white/80">{title}</p>
         </div>
         <nav className="flex flex-1 flex-col gap-1 border-r border-slate-200 bg-white p-4">
