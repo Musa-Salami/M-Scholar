@@ -68,12 +68,32 @@ interface CommsState {
   getThreadForParent: (parentEmail: string) => MessageThread | undefined;
   getMessages: (threadId: string) => ChatMessage[];
   getOrCreateThread: (studentId: string, parentEmail: string, teacherName: string, studentName: string, className: string) => MessageThread;
+  resetToDemo: () => void;
+  applyPersisted: (data: {
+    notes: TeacherNote[];
+    threads: MessageThread[];
+    messages: ChatMessage[];
+  }) => void;
 }
 
 export const useCommsStore = create<CommsState>()((set, get) => ({
       notes: SEED_NOTES,
       threads: SEED_THREADS,
       messages: SEED_MESSAGES,
+
+      resetToDemo: () =>
+        set({
+          notes: SEED_NOTES,
+          threads: SEED_THREADS,
+          messages: SEED_MESSAGES,
+        }),
+
+      applyPersisted: (data) =>
+        set({
+          notes: data.notes ?? [],
+          threads: data.threads ?? [],
+          messages: data.messages ?? [],
+        }),
 
       addNote: (note, parentEmail) => {
         const newNote: TeacherNote = {

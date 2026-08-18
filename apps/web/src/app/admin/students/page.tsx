@@ -144,6 +144,7 @@ export default function AdminStudentsPage() {
     } else {
       addStudent(payload);
     }
+    useSchoolStore.getState().syncClassCounts(useFinanceStore.getState().students);
     closePanel();
   };
 

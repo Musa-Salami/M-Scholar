@@ -1,9 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { UserRole } from "@m-scholar/shared";
-
-const STORAGE_KEY = "mscholar-school";
+import { SCHOOL, type UserRole } from "@m-scholar/shared";
 
 export interface SchoolUser {
   id: string;
@@ -20,7 +18,17 @@ export interface SchoolClass {
   teacherId: string | null;
 }
 
-const SEED_USERS: SchoolUser[] = [
+export interface SchoolSettings {
+  schoolName: string;
+  motto: string;
+  address: string;
+  phone: string;
+  email: string;
+  session: string;
+  term: string;
+}
+
+export const SEED_USERS: SchoolUser[] = [
   { id: "u1", name: "System Administrator", email: "admin@mscholar.app", role: "super_admin", status: "Active" },
   { id: "u2", name: "Adaeze Okonkwo", email: "finance@mscholar.app", role: "account_officer", status: "Active" },
   { id: "u3", name: "Emeka Nwosu", email: "teacher@mscholar.app", role: "class_teacher", status: "Active" },
@@ -31,106 +39,102 @@ const SEED_USERS: SchoolUser[] = [
   { id: "u8", name: "Amina Bello", email: "student@mscholar.app", role: "student", status: "Active" },
 ];
 
-const SEED_CLASSES: SchoolClass[] = [
-  { id: "c1", name: "JSS 1A", studentCount: 38, teacherId: "u3" },
-  { id: "c2", name: "JSS 1B", studentCount: 36, teacherId: "u4" },
-  { id: "c3", name: "JSS 2A", studentCount: 34, teacherId: "u3" },
-  { id: "c4", name: "SS 1 Science", studentCount: 42, teacherId: "u5" },
-  { id: "c5", name: "SS 2 Arts", studentCount: 29, teacherId: "u6" },
+export const SEED_CLASSES: SchoolClass[] = [
+  { id: "c1", name: "JSS 1A", studentCount: 2, teacherId: "u4" },
+  { id: "c2", name: "JSS 1B", studentCount: 0, teacherId: "u4" },
+  { id: "c3", name: "JSS 2A", studentCount: 2, teacherId: "u3" },
+  { id: "c4", name: "SS 1 Science", studentCount: 1, teacherId: "u5" },
+  { id: "c5", name: "SS 2 Arts", studentCount: 0, teacherId: "u6" },
 ];
 
-function persist(users: SchoolUser[], classes: SchoolClass[]) {
-  try {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ users, classes }));
-  } catch {
-    /* ignore */
-  }
-}
-
-function readStored(): { users: SchoolUser[]; classes: SchoolClass[] } | null {
-  try {
-    if (typeof window === "undefined") return null;
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw) as { users?: SchoolUser[]; classes?: SchoolClass[] };
-    if (!Array.isArray(data.users) || !Array.isArray(data.classes)) return null;
-    return { users: data.users, classes: data.classes };
-  } catch {
-    return null;
-  }
-}
+export const SEED_SETTINGS: SchoolSettings = {
+  schoolName: SCHOOL.name,
+  motto: SCHOOL.motto,
+  address: SCHOOL.address,
+  phone: SCHOOL.phone,
+  email: SCHOOL.email,
+  session: "2025/2026",
+  term: "First Term",
+};
 
 interface SchoolState {
   users: SchoolUser[];
   classes: SchoolClass[];
+  settings: SchoolSettings;
   restored: boolean;
   restore: () => void;
+  resetToDemo: () => void;
+  applyPersisted: (data: { users: SchoolUser[]; classes: SchoolClass[]; settings?: SchoolSettings }) => void;
   addUser: (user: Omit<SchoolUser, "id" | "status">) => void;
   addClass: (name: string, teacherId: string | null) => { ok: boolean; error?: string };
   assignTeacher: (classId: string, teacherId: string | null) => void;
+  updateSettings: (settings: SchoolSettings) => void;
+  syncClassCounts: (students: { className: string }[]) => void;
 }
 
 export const useSchoolStore = create<SchoolState>()((set, get) => ({
   users: SEED_USERS,
   classes: SEED_CLASSES,
+  settings: SEED_SETTINGS,
   restored: false,
 
-  restore: () => {
-    if (get().restored) return;
-    const stored = readStored();
-    if (stored) set({ ...stored, restored: true });
-    else set({ restored: true });
-  },
+  restore: () => set({ restored: true }),
+
+  resetToDemo: () =>
+    set({
+      users: SEED_USERS,
+      classes: SEED_CLASSES,
+      settings: SEED_SETTINGS,
+      restored: true,
+    }),
+
+  applyPersisted: (data) =>
+    set({
+      users: data.users,
+      classes: data.classes,
+      settings: data.settings ?? SEED_SETTINGS,
+      restored: true,
+    }),
 
   addUser: (user) => {
-    set((s) => {
-      const users = [
-        ...s.users,
-        { ...user, id: `u${Date.now()}`, status: "Active" as const },
-      ];
-      persist(users, s.classes);
-      return { users };
-    });
+    set((s) => ({
+      users: [...s.users, { ...user, id: `u${Date.now()}`, status: "Active" as const }],
+    }));
   },
 
   addClass: (name, teacherId) => {
     const trimmed = name.trim();
     if (!trimmed) return { ok: false, error: "Enter a class name." };
-    const exists = get().classes.some(
-      (c) => c.name.toLowerCase() === trimmed.toLowerCase()
-    );
+    const exists = get().classes.some((c) => c.name.toLowerCase() === trimmed.toLowerCase());
     if (exists) return { ok: false, error: "A class with this name already exists." };
     if (teacherId) {
-      const teacher = get().users.find(
-        (u) => u.id === teacherId && u.role === "class_teacher"
-      );
+      const teacher = get().users.find((u) => u.id === teacherId && u.role === "class_teacher");
       if (!teacher) return { ok: false, error: "Select a teacher whose profile already exists." };
     }
-    set((s) => {
-      const classes = [
-        ...s.classes,
-        { id: `c${Date.now()}`, name: trimmed, studentCount: 0, teacherId },
-      ];
-      persist(s.users, classes);
-      return { classes };
-    });
+    set((s) => ({
+      classes: [...s.classes, { id: `c${Date.now()}`, name: trimmed, studentCount: 0, teacherId }],
+    }));
     return { ok: true };
   },
 
   assignTeacher: (classId, teacherId) => {
     if (teacherId) {
-      const teacher = get().users.find(
-        (u) => u.id === teacherId && u.role === "class_teacher"
-      );
+      const teacher = get().users.find((u) => u.id === teacherId && u.role === "class_teacher");
       if (!teacher) return;
     }
-    set((s) => {
-      const classes = s.classes.map((c) =>
-        c.id === classId ? { ...c, teacherId } : c
-      );
-      persist(s.users, classes);
-      return { classes };
-    });
+    set((s) => ({
+      classes: s.classes.map((c) => (c.id === classId ? { ...c, teacherId } : c)),
+    }));
+  },
+
+  updateSettings: (settings) => set({ settings }),
+
+  syncClassCounts: (students) => {
+    set((s) => ({
+      classes: s.classes.map((c) => ({
+        ...c,
+        studentCount: students.filter((st) => st.className === c.name).length,
+      })),
+    }));
   },
 }));

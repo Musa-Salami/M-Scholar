@@ -22,7 +22,7 @@ const TERM = "First Term";
 const SEED_STUDENTS: Student[] = [
   {
     id: "s1",
-    admissionNo: "MS-1042",
+    admissionNo: "J1AB26",
     name: "Amina Bello",
     className: "JSS 2A",
     parentEmail: "parent@mscholar.app",
@@ -35,7 +35,7 @@ const SEED_STUDENTS: Student[] = [
   },
   {
     id: "s2",
-    admissionNo: "MS-1043",
+    admissionNo: "J1CO26",
     name: "Chidi Okafor",
     className: "JSS 2A",
     parentEmail: "chidi.parent@email.com",
@@ -47,7 +47,7 @@ const SEED_STUDENTS: Student[] = [
   },
   {
     id: "s3",
-    admissionNo: "MS-1044",
+    admissionNo: "J1ZI26",
     name: "Zainab Ibrahim",
     className: "JSS 1A",
     parentEmail: "zainab.parent@email.com",
@@ -59,7 +59,7 @@ const SEED_STUDENTS: Student[] = [
   },
   {
     id: "s4",
-    admissionNo: "MS-1045",
+    admissionNo: "S1DA26",
     name: "David Adeyemi",
     className: "SS 1 Science",
     parentEmail: "david.parent@email.com",
@@ -71,7 +71,7 @@ const SEED_STUDENTS: Student[] = [
   },
   {
     id: "s5",
-    admissionNo: "MS-1046",
+    admissionNo: "J1BE26",
     name: "Blessing Eze",
     className: "JSS 1A",
     parentEmail: "blessing.parent@email.com",
@@ -125,35 +125,15 @@ const SEED_FEE_STRUCTURES: FeeStructure[] = [
   },
 ];
 
-const STUDENTS_KEY = "mscholar-students";
-
-function persistStudents(students: Student[]) {
-  try {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
-  } catch {
-    /* ignore */
-  }
-}
-
-function readStoredStudents(): Student[] | null {
-  try {
-    if (typeof window === "undefined") return null;
-    const raw = window.localStorage.getItem(STUDENTS_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw) as Student[];
-    if (!Array.isArray(data)) return null;
-    return data.map((s) => ({
-      ...s,
-      dateOfBirth: s.dateOfBirth ?? "",
-      parentAddress: s.parentAddress ?? "",
-      parentPhone: s.parentPhone ?? "",
-      disability: s.disability ?? "None",
-      allergy: s.allergy ?? "None",
-    }));
-  } catch {
-    return null;
-  }
+function normalizeStudent(s: Student): Student {
+  return {
+    ...s,
+    dateOfBirth: s.dateOfBirth ?? "",
+    parentAddress: s.parentAddress ?? "",
+    parentPhone: s.parentPhone ?? "",
+    disability: s.disability ?? "None",
+    allergy: s.allergy ?? "None",
+  };
 }
 
 function invoiceNo(seq: number) {
@@ -224,6 +204,19 @@ const SEED_INVOICES: Invoice[] = [
     term: TERM,
     session: SESSION,
   },
+  {
+    id: "inv5",
+    invoiceNo: invoiceNo(5),
+    studentId: "s5",
+    feeStructureId: "fs2",
+    totalAmount: 100000,
+    amountPaid: 40000,
+    balance: 60000,
+    status: "partial",
+    dueDate: "2026-03-15",
+    term: TERM,
+    session: SESSION,
+  },
 ];
 
 const SEED_PAYMENTS: Payment[] = [
@@ -258,6 +251,17 @@ const SEED_PAYMENTS: Payment[] = [
     reference: "POS-4491",
     receiptNo: receiptNo(3),
     paidAt: "2026-02-05T09:15:00",
+    recordedBy: "Adaeze Okonkwo",
+  },
+  {
+    id: "pay4",
+    invoiceId: "inv5",
+    studentId: "s5",
+    amount: 40000,
+    method: "transfer",
+    reference: "TXN-91002",
+    receiptNo: receiptNo(4),
+    paidAt: "2026-02-08T11:20:00",
     recordedBy: "Adaeze Okonkwo",
   },
 ];
@@ -296,7 +300,19 @@ interface FinanceState {
   addFeeStructure: (data: Omit<FeeStructure, "id" | "totalAmount">) => void;
   addStudent: (data: Omit<Student, "id">) => void;
   updateStudent: (id: string, data: Omit<Student, "id">) => void;
-  restoreStudents: () => void;
+  resetToDemo: () => void;
+  applyPersisted: (data: {
+    students: Student[];
+    feeStructures: FeeStructure[];
+    invoices: Invoice[];
+    payments: Payment[];
+    income: IncomeRecord[];
+    expenditure: ExpenditureRecord[];
+    staff: StaffMember[];
+    payrollRuns: PayrollRun[];
+    invoiceSeq: number;
+    receiptSeq: number;
+  }) => void;
   generateInvoices: (feeStructureId: string) => number;
   recordPayment: (data: {
     invoiceId: string;
@@ -335,28 +351,47 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
       expenditure: SEED_EXPENDITURE,
       staff: SEED_STAFF,
       payrollRuns: [],
-      invoiceSeq: 5,
-      receiptSeq: 4,
+      invoiceSeq: 6,
+      receiptSeq: 5,
 
-      restoreStudents: () => {
-        const stored = readStoredStudents();
-        if (stored) set({ students: stored });
-      },
+      resetToDemo: () =>
+        set({
+          students: SEED_STUDENTS,
+          feeStructures: SEED_FEE_STRUCTURES,
+          invoices: SEED_INVOICES,
+          payments: SEED_PAYMENTS,
+          income: SEED_INCOME,
+          expenditure: SEED_EXPENDITURE,
+          staff: SEED_STAFF,
+          payrollRuns: [],
+          invoiceSeq: 6,
+          receiptSeq: 5,
+        }),
+
+      applyPersisted: (data) =>
+        set({
+          students: (data.students ?? []).map(normalizeStudent),
+          feeStructures: data.feeStructures ?? SEED_FEE_STRUCTURES,
+          invoices: data.invoices ?? [],
+          payments: data.payments ?? [],
+          income: data.income ?? [],
+          expenditure: data.expenditure ?? [],
+          staff: data.staff ?? SEED_STAFF,
+          payrollRuns: data.payrollRuns ?? [],
+          invoiceSeq: data.invoiceSeq ?? 6,
+          receiptSeq: data.receiptSeq ?? 5,
+        }),
 
       addStudent: (data) => {
-        set((s) => {
-          const students = [...s.students, { ...data, id: `s${Date.now()}` }];
-          persistStudents(students);
-          return { students };
-        });
+        set((s) => ({
+          students: [...s.students, { ...data, id: `s${Date.now()}` }],
+        }));
       },
 
       updateStudent: (id, data) => {
-        set((s) => {
-          const students = s.students.map((st) => (st.id === id ? { ...st, ...data } : st));
-          persistStudents(students);
-          return { students };
-        });
+        set((s) => ({
+          students: s.students.map((st) => (st.id === id ? { ...st, ...data } : st)),
+        }));
       },
 
       addFeeStructure: (data) => {

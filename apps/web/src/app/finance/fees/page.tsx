@@ -9,17 +9,21 @@ import { PageHeader } from "@/components/dashboard-ui";
 import { DataTable, FormField, inputClass, selectClass, btnPrimary, btnSecondary, StatusBadge } from "@/components/finance-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useFinanceStore } from "@/lib/finance-store";
+import { useSchoolStore } from "@/lib/school-store";
 import { formatCurrency } from "@/lib/utils";
 
 export default function FeesPage() {
   useRequireAuth(["account_officer"]);
   const { feeStructures, invoices, addFeeStructure, generateInvoices, getStudent } = useFinanceStore();
+  const classes = useSchoolStore((s) => s.classes);
+  const settings = useSchoolStore((s) => s.settings);
+  const classNames = classes.length ? classes.map((c) => c.name) : ["JSS 1A", "JSS 2A", "SS 1 Science", "SS 2 Arts"];
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     name: "",
-    className: "JSS 2A",
-    term: "First Term",
-    session: "2025/2026",
+    className: classNames[0] ?? "JSS 2A",
+    term: settings.term,
+    session: settings.session,
     items: [{ category: "Tuition" as FeeCategory, amount: 0 }],
   });
   const [toast, setToast] = useState("");
@@ -32,7 +36,13 @@ export default function FeesPage() {
     e.preventDefault();
     addFeeStructure(form);
     setShowForm(false);
-    setForm({ name: "", className: "JSS 2A", term: "First Term", session: "2025/2026", items: [{ category: "Tuition", amount: 0 }] });
+    setForm({
+      name: "",
+      className: classNames[0] ?? "JSS 2A",
+      term: settings.term,
+      session: settings.session,
+      items: [{ category: "Tuition", amount: 0 }],
+    });
     setToast("Fee structure created.");
     setTimeout(() => setToast(""), 3000);
   };
@@ -49,7 +59,19 @@ export default function FeesPage() {
         title="Fees & Invoices"
         description="Define fee structures and generate student invoices."
         action={
-          <button onClick={() => setShowForm(true)} className={`inline-flex items-center gap-2 ${btnPrimary}`}>
+          <button
+            onClick={() => {
+              setForm({
+                name: "",
+                className: classNames[0] ?? "JSS 2A",
+                term: settings.term,
+                session: settings.session,
+                items: [{ category: "Tuition", amount: 0 }],
+              });
+              setShowForm(true);
+            }}
+            className={`inline-flex items-center gap-2 ${btnPrimary}`}
+          >
             <Plus className="h-4 w-4" /> New fee structure
           </button>
         }
@@ -68,7 +90,7 @@ export default function FeesPage() {
             </FormField>
             <FormField label="Class">
               <select className={selectClass} value={form.className} onChange={(e) => setForm({ ...form, className: e.target.value })}>
-                {["JSS 1A", "JSS 2A", "SS 1 Science", "SS 2 Arts"].map((c) => (
+                {classNames.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>

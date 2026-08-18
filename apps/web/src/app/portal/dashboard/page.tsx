@@ -17,6 +17,7 @@ export default function PortalDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const students = useFinanceStore((s) => s.students ?? []);
   const invoices = useFinanceStore((s) => s.invoices ?? []);
+  const getAttendanceSummary = useAcademicStore((s) => s.getAttendanceSummary);
   const termResults = useAcademicStore((s) => s.termResults ?? []);
   const notes = useCommsStore((s) => s.notes ?? []);
   const notifications = useNotificationStore((s) => s.notifications ?? []);
@@ -38,6 +39,7 @@ export default function PortalDashboardPage() {
   const feeBalance = myInvoices.reduce((sum, i) => sum + (i.balance || 0), 0);
   const results = termResults.filter((r) => student && r.studentId === student.id && r.status === "published");
   const latest = results[0];
+  const attendance = student ? getAttendanceSummary(student.id) : null;
   const unreadNotes = notes.filter((n) => ids.has(n.studentId) && !n.readAt).length;
   const unreadNotifs = notifications.filter((n) => n.userEmail === user.email && !n.read).length;
 
@@ -48,7 +50,13 @@ export default function PortalDashboardPage() {
         description={student ? `Overview for ${student.name} — ${student.className}.` : "Parent / student portal"}
       />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Attendance" value="94%" change="This term" icon={Calendar} accent="sky" />
+        <StatCard
+          title="Attendance"
+          value={attendance ? `${attendance.percent}%` : "—"}
+          change={attendance ? `${attendance.present} present of ${attendance.total} days` : "No register yet"}
+          icon={Calendar}
+          accent="sky"
+        />
         <StatCard title="Fee Balance" value={formatCurrency(feeBalance)} change="Outstanding dues" icon={Receipt} accent="amber" />
         <StatCard title="Latest Grade" value={latest?.grade ?? "—"} change={latest?.subject ?? "Results"} icon={Award} accent="emerald" />
         <StatCard title="Alerts" value={String(unreadNotes + unreadNotifs)} change="Notes & notifications" icon={MessageSquare} accent="violet" />

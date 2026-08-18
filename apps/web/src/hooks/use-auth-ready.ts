@@ -2,16 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/auth-store";
-import { useFinanceStore } from "@/lib/finance-store";
+import { bootstrapAppData } from "@/lib/bootstrap-data";
 
-/** Restore login from localStorage after the page has mounted. */
+/** Restore login and the protected data vault after the page has mounted. */
 export function useAuthReady() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    useAuthStore.getState().restore();
-    useFinanceStore.getState().restoreStudents();
-    setReady(true);
+    let cancelled = false;
+    (async () => {
+      useAuthStore.getState().restore();
+      await bootstrapAppData();
+      if (!cancelled) setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return ready;

@@ -35,6 +35,20 @@ const SEED_RESULTS: TermResult[] = [
   { id: "r3", studentId: "s2", subject: "Mathematics", caScore: 29, examScore: 40, totalScore: 69, grade: "B", term: TERM, status: "draft" },
 ];
 
+const SEED_REGISTERS: AttendanceRegister[] = [
+  {
+    id: "reg1",
+    className: TEACHER_CLASS,
+    date: "2026-02-10",
+    takenBy: "Emeka Nwosu",
+    status: "submitted",
+    records: [
+      { studentId: "s1", status: "present" },
+      { studentId: "s2", status: "present" },
+    ],
+  },
+];
+
 interface AcademicState {
   registers: AttendanceRegister[];
   assessments: Assessment[];
@@ -53,13 +67,36 @@ interface AcademicState {
   getResultsForStudent: (studentId: string) => TermResult[];
   getAttendanceForStudent: (studentId: string) => { date: string; status: AttendanceStatus }[];
   getAttendanceSummary: (studentId: string) => { present: number; absent: number; late: number; total: number; percent: number };
+  resetToDemo: () => void;
+  applyPersisted: (data: {
+    registers: AttendanceRegister[];
+    assessments: Assessment[];
+    scores: AssessmentScore[];
+    termResults: TermResult[];
+  }) => void;
 }
 
 export const useAcademicStore = create<AcademicState>()((set, get) => ({
-      registers: [],
+      registers: SEED_REGISTERS,
       assessments: SEED_ASSESSMENTS,
       scores: SEED_SCORES,
       termResults: SEED_RESULTS,
+
+      resetToDemo: () =>
+        set({
+          registers: SEED_REGISTERS,
+          assessments: SEED_ASSESSMENTS,
+          scores: SEED_SCORES,
+          termResults: SEED_RESULTS,
+        }),
+
+      applyPersisted: (data) =>
+        set({
+          registers: data.registers ?? [],
+          assessments: data.assessments ?? SEED_ASSESSMENTS,
+          scores: data.scores ?? [],
+          termResults: data.termResults ?? [],
+        }),
 
       getRegister: (className, date) =>
         get().registers.find((r) => r.className === className && r.date === date),
