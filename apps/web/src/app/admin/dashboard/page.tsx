@@ -5,6 +5,7 @@ import { Activity, Database, Download, GraduationCap, Shield, UserCheck, Users }
 import { ADMIN_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader, StatCard } from "@/components/dashboard-ui";
+import { StudentLookupPanel } from "@/components/student-record-view";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useSchoolStore } from "@/lib/school-store";
@@ -169,6 +170,10 @@ export default function AdminDashboardPage() {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="mt-8" id="student-records">
+        <StudentLookupPanel />
       </div>
 
       <div

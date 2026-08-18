@@ -13,6 +13,7 @@ import {
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { DataTable, FormField, btnSecondary } from "@/components/finance-ui";
+import { StudentResultButtons } from "@/components/student-record-view";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useSchoolReady } from "@/hooks/use-school-ready";
 import { useFinanceStore } from "@/lib/finance-store";
@@ -250,6 +251,7 @@ export default function AdminStudentsPage() {
                 <button type="button" onClick={() => setMode("edit")} className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700">
                   Edit record
                 </button>
+                {editingId && <StudentResultButtons studentId={editingId} />}
                 <button type="button" onClick={closePanel} className={btnSecondary}>Close</button>
               </>
             ) : (
@@ -276,7 +278,7 @@ export default function AdminStudentsPage() {
             <td className="px-6 py-4 text-slate-500">{s.className}</td>
             <td className="px-6 py-4 text-slate-500">{s.parentEmail}</td>
             <td className="px-6 py-4">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => openView(s)}
@@ -291,6 +293,7 @@ export default function AdminStudentsPage() {
                 >
                   <Pencil className="h-4 w-4" /> Edit
                 </button>
+                <StudentResultButtons studentId={s.id} compact />
               </div>
             </td>
           </tr>
