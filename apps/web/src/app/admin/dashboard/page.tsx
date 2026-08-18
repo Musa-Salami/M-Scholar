@@ -7,7 +7,15 @@ import { PageHeader, StatCard } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export default function AdminDashboardPage() {
-  useRequireAuth(["super_admin"]);
+  const { ready } = useRequireAuth(["super_admin"]);
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-500">Loading portal…</p>
+      </div>
+    );
+  }
 
   return (
     <PortalShell navItems={ADMIN_NAV} title="Super Admin Portal">

@@ -6,30 +6,58 @@ import { PORTAL_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { useAuthStore } from "@/lib/auth-store";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useCommsStore } from "@/lib/comms-store";
 import { cn } from "@/lib/utils";
 
 export default function PortalMessagesPage() {
-  useRequireAuth(["parent", "student"]);
-  const { user } = useAuthStore();
-  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.parentEmail === user?.email || st.studentEmail === user?.email));
-  const student = students[0];
-  const { getThreadForParent, getMessages, sendMessage, getOrCreateThread } = useCommsStore();
+  const { ready, user } = useRequireAuth(["parent", "student"]);
+  const studentsAll = useFinanceStore((s) => s.students ?? []);
+  const threads = useCommsStore((s) => s.threads ?? []);
+  const messagesAll = useCommsStore((s) => s.messages ?? []);
+  const sendMessage = useCommsStore((s) => s.sendMessage);
+  const getOrCreateThread = useCommsStore((s) => s.getOrCreateThread);
   const [body, setBody] = useState("");
+  const [threadId, setThreadId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const thread = user ? getThreadForParent(user.email) : undefined;
-  const activeThread = thread ?? (student && user
-    ? getOrCreateThread(student.id, user.email, "Emeka Nwosu", student.name, student.className)
-    : undefined);
+  const students = user
+    ? studentsAll.filter((st) => st.parentEmail === user.email || st.studentEmail === user.email)
+    : [];
+  const student = students[0];
+  const existingThread = user
+    ? threads.find((t) => t.parentEmail === user.email || t.studentId === student?.id)
+    : undefined;
+  const activeThread = threads.find((t) => t.id === threadId) ?? existingThread;
+  const messages = activeThread ? messagesAll.filter((m) => m.threadId === activeThread.id) : [];
 
-  const messages = activeThread ? getMessages(activeThread.id) : [];
+  useEffect(() => {
+    if (!ready || !user || !student || threadId) return;
+    if (existingThread) {
+      setThreadId(existingThread.id);
+      return;
+    }
+    const created = getOrCreateThread(
+      student.id,
+      user.email,
+      "Emeka Nwosu",
+      student.name,
+      student.className
+    );
+    setThreadId(created.id);
+  }, [ready, user, student, threadId, existingThread, getOrCreateThread]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
+
+  if (!ready || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-500">Loading portal…</p>
+      </div>
+    );
+  }
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();

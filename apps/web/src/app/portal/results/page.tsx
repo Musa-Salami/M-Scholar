@@ -5,21 +5,34 @@ import { PORTAL_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { useAuthStore } from "@/lib/auth-store";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useAcademicStore } from "@/lib/academic-store";
 import { ReportCardModal } from "@/components/report-card-modal";
 
 export default function PortalResultsPage() {
-  useRequireAuth(["parent", "student"]);
-  const { user } = useAuthStore();
-  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.parentEmail === user?.email || st.studentEmail === user?.email));
-  const student = students[0];
-  const { getResultsForStudent } = useAcademicStore();
+  const { ready, user } = useRequireAuth(["parent", "student"]);
+  const studentsAll = useFinanceStore((s) => s.students ?? []);
+  const termResults = useAcademicStore((s) => s.termResults ?? []);
   const [showReport, setShowReport] = useState(false);
 
-  const results = student ? getResultsForStudent(student.id).filter((r) => r.status === "published") : [];
-  const average = results.length ? Math.round(results.reduce((s, r) => s + r.totalScore, 0) / results.length) : 0;
+  if (!ready || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-500">Loading portal…</p>
+      </div>
+    );
+  }
+
+  const students = studentsAll.filter(
+    (st) => st.parentEmail === user.email || st.studentEmail === user.email
+  );
+  const student = students[0];
+  const results = student
+    ? termResults.filter((r) => r.studentId === student.id && r.status === "published")
+    : [];
+  const average = results.length
+    ? Math.round(results.reduce((s, r) => s + r.totalScore, 0) / results.length)
+    : 0;
 
   return (
     <PortalShell navItems={PORTAL_NAV} title="Parent / Student Portal">

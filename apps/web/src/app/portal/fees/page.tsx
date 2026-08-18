@@ -7,21 +7,31 @@ import { PageHeader } from "@/components/dashboard-ui";
 import { DataTable, StatusBadge } from "@/components/finance-ui";
 import { ReceiptModal } from "@/components/receipt-modal";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { useAuthStore } from "@/lib/auth-store";
 import { useFinanceStore } from "@/lib/finance-store";
 import { formatCurrency } from "@/lib/utils";
 import type { Payment } from "@m-scholar/shared";
 
 export default function PortalFeesPage() {
-  useRequireAuth(["parent", "student"]);
-  const { user } = useAuthStore();
-  const { getInvoicesForParent, getPaymentsForParent, getStudent } = useFinanceStore();
+  const { ready, user } = useRequireAuth(["parent", "student"]);
+  const students = useFinanceStore((s) => s.students ?? []);
+  const invoicesAll = useFinanceStore((s) => s.invoices ?? []);
+  const paymentsAll = useFinanceStore((s) => s.payments ?? []);
   const [receipt, setReceipt] = useState<Payment | null>(null);
 
-  const email = user?.email ?? "";
-  const invoices = getInvoicesForParent(email);
-  const payments = getPaymentsForParent(email);
-  const totalDue = invoices.reduce((s, i) => s + i.balance, 0);
+  if (!ready || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-500">Loading portal…</p>
+      </div>
+    );
+  }
+
+  const ids = new Set(
+    students.filter((st) => st.parentEmail === user.email || st.studentEmail === user.email).map((s) => s.id)
+  );
+  const invoices = invoicesAll.filter((i) => ids.has(i.studentId));
+  const payments = paymentsAll.filter((p) => ids.has(p.studentId));
+  const totalDue = invoices.reduce((s, i) => s + (i.balance || 0), 0);
 
   return (
     <PortalShell navItems={PORTAL_NAV} title="Parent / Student Portal">
@@ -38,7 +48,7 @@ export default function PortalFeesPage() {
       <h3 className="mb-4 font-display font-semibold text-slate-900">Invoices</h3>
       <DataTable headers={["Invoice", "Student", "Term", "Total", "Paid", "Balance", "Status", "Due"]}>
         {invoices.map((inv) => {
-          const student = getStudent(inv.studentId);
+          const student = students.find((st) => st.id === inv.studentId);
           return (
             <tr key={inv.id} className="hover:bg-slate-50">
               <td className="px-6 py-4 font-medium">{inv.invoiceNo}</td>
@@ -57,7 +67,7 @@ export default function PortalFeesPage() {
       <h3 className="mb-4 mt-8 font-display font-semibold text-slate-900">Payment history & receipts</h3>
       <DataTable headers={["Receipt", "Student", "Amount", "Date", ""]}>
         {payments.map((pay) => {
-          const student = getStudent(pay.studentId);
+          const student = students.find((st) => st.id === pay.studentId);
           return (
             <tr key={pay.id} className="hover:bg-slate-50">
               <td className="px-6 py-4 font-medium">{pay.receiptNo}</td>

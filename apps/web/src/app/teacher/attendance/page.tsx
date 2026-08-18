@@ -34,7 +34,7 @@ export default function TeacherAttendancePage() {
   useEffect(() => {
     if (register) {
       const m: Record<string, AttendanceStatus> = {};
-      register.records.forEach((r) => { m[r.studentId] = r.status; });
+      (register.records ?? []).forEach((r) => { m[r.studentId] = r.status; });
       setMarks(m);
     } else {
       const init: Record<string, AttendanceStatus> = {};

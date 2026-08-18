@@ -7,14 +7,16 @@ import { useAuthStore } from "@/lib/auth-store";
 import { useNotificationStore } from "@/lib/notification-store";
 
 export function NotificationBell() {
-  const { user } = useAuthStore();
-  const { getForUser, unreadCount, markRead, markAllRead } = useNotificationStore();
+  const user = useAuthStore((s) => s.user);
+  const notifications = useNotificationStore((s) => s.notifications ?? []);
+  const markRead = useNotificationStore((s) => s.markRead);
+  const markAllRead = useNotificationStore((s) => s.markAllRead);
   const [open, setOpen] = useState(false);
 
   if (!user) return null;
 
-  const items = getForUser(user.email);
-  const unread = unreadCount(user.email);
+  const items = notifications.filter((n) => n.userEmail === user.email);
+  const unread = items.filter((n) => !n.read).length;
 
   return (
     <div className="relative">
@@ -51,7 +53,10 @@ export function NotificationBell() {
                   <Link
                     key={n.id}
                     href={n.href}
-                    onClick={() => { markRead(n.id); setOpen(false); }}
+                    onClick={() => {
+                      markRead(n.id);
+                      setOpen(false);
+                    }}
                     className={`block border-b px-4 py-3 hover:bg-slate-50 ${!n.read ? "bg-blue-50/50" : ""}`}
                   >
                     <p className="text-sm font-medium text-slate-900">{n.title}</p>

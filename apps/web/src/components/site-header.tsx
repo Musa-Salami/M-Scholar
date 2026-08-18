@@ -46,7 +46,7 @@ export function SiteHeader() {
           {isAuthenticated && user ? (
             <div className="flex items-center gap-2">
               <Link
-                href={dashboardPath()}
+                href={`${dashboardPath().replace(/\/$/, "")}/`}
                 className="hidden rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 sm:inline-flex"
               >
                 My Portal

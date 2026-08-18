@@ -91,7 +91,8 @@ interface PortalShellProps {
 
 export function PortalShell({ navItems, children, title }: PortalShellProps) {
   const pathname = usePathname();
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
   const ready = useAuthReady();
   const [mobileOpen, setMobileOpen] = useState(false);
   const current = (pathname ?? "").replace(/\/$/, "") || "/";
@@ -126,9 +127,9 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
             const Icon = ICONS[item.icon] ?? LayoutDashboard;
             const active = current === item.href.replace(/\/$/, "");
             return (
-              <Link
+              <a
                 key={item.href}
-                href={item.href}
+                href={item.href.endsWith("/") ? item.href : `${item.href}/`}
                 className={cn(
                   "flex items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50",
                   active && accent.active
@@ -136,7 +137,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
               >
                 <Icon className="h-4 w-4 shrink-0" />
                 {item.label}
-              </Link>
+              </a>
             );
           })}
         </nav>
@@ -152,7 +153,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
           <button
             onClick={() => {
               logout();
-              window.location.href = "/login";
+              window.location.href = "/login/";
             }}
             className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-red-50 hover:text-red-600"
           >
@@ -195,15 +196,15 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
                 {navItems.map((item) => {
                   const Icon = ICONS[item.icon] ?? LayoutDashboard;
                   return (
-                    <Link
+                    <a
                       key={item.href}
-                      href={item.href}
+                      href={item.href.endsWith("/") ? item.href : `${item.href}/`}
                       onClick={() => setMobileOpen(false)}
                       className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
                     >
                       <Icon className="h-4 w-4" />
                       {item.label}
-                    </Link>
+                    </a>
                   );
                 })}
               </nav>

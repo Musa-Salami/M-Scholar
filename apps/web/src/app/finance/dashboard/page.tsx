@@ -10,8 +10,22 @@ import { useFinanceStore } from "@/lib/finance-store";
 import { formatCurrency } from "@/lib/utils";
 
 export default function FinanceDashboardPage() {
-  useRequireAuth(["account_officer"]);
-  const { invoices, payments, income, expenditure, stats, getStudent } = useFinanceStore();
+  const { ready } = useRequireAuth(["account_officer"]);
+  const invoices = useFinanceStore((s) => s.invoices ?? []);
+  const payments = useFinanceStore((s) => s.payments ?? []);
+  const income = useFinanceStore((s) => s.income ?? []);
+  const expenditure = useFinanceStore((s) => s.expenditure ?? []);
+  const stats = useFinanceStore((s) => s.stats);
+  const getStudent = useFinanceStore((s) => s.getStudent);
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-500">Loading portal…</p>
+      </div>
+    );
+  }
+
   const s = stats();
 
   const collectionRate = invoices.length

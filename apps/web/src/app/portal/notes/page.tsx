@@ -4,7 +4,6 @@ import { PORTAL_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { useAuthStore } from "@/lib/auth-store";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useCommsStore } from "@/lib/comms-store";
 import { cn } from "@/lib/utils";
@@ -17,12 +16,24 @@ const PRIORITY_STYLES: Record<NotePriority, string> = {
 };
 
 export default function PortalNotesPage() {
-  useRequireAuth(["parent", "student"]);
-  const { user } = useAuthStore();
-  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.parentEmail === user?.email || st.studentEmail === user?.email));
-  const studentIds = students.map((s) => s.id);
-  const { getNotesForParent, markNoteRead } = useCommsStore();
-  const notes = getNotesForParent(user?.email ?? "", studentIds);
+  const { ready, user } = useRequireAuth(["parent", "student"]);
+  const studentsAll = useFinanceStore((s) => s.students ?? []);
+  const notesAll = useCommsStore((s) => s.notes ?? []);
+  const markNoteRead = useCommsStore((s) => s.markNoteRead);
+
+  if (!ready || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-500">Loading portal…</p>
+      </div>
+    );
+  }
+
+  const students = studentsAll.filter(
+    (st) => st.parentEmail === user.email || st.studentEmail === user.email
+  );
+  const studentIds = new Set(students.map((s) => s.id));
+  const notes = notesAll.filter((n) => studentIds.has(n.studentId));
 
   return (
     <PortalShell navItems={PORTAL_NAV} title="Parent / Student Portal">
@@ -40,7 +51,7 @@ export default function PortalNotesPage() {
               <div
                 key={note.id}
                 onClick={() => !note.readAt && markNoteRead(note.id)}
-                className={cn("card-shadow cursor-pointer rounded-2xl border-l-4 bg-white p-5 hover:shadow-md transition", PRIORITY_STYLES[note.priority], !note.readAt && "ring-2 ring-sky-100")}
+                className={cn("card-shadow cursor-pointer rounded-2xl border-l-4 bg-white p-5 hover:shadow-md transition", PRIORITY_STYLES[note.priority] ?? PRIORITY_STYLES.info, !note.readAt && "ring-2 ring-sky-100")}
               >
                 <div className="flex justify-between">
                   <p className="text-xs text-slate-500">{student?.name} · {note.teacherName} · {new Date(note.createdAt).toLocaleDateString()}</p>

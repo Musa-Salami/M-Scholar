@@ -13,33 +13,45 @@ import { useNotificationStore } from "@/lib/notification-store";
 import { formatCurrency } from "@/lib/utils";
 
 export default function PortalDashboardPage() {
-  useRequireAuth(["parent", "student"]);
-  const { user } = useAuthStore();
-  const students = useFinanceStore((s) =>
-    (s.students ?? []).filter((st) => st.parentEmail === user?.email || st.studentEmail === user?.email)
-  );
-  const student = students[0];
-  const { getInvoicesForParent } = useFinanceStore();
-  const { getAttendanceSummary, getResultsForStudent } = useAcademicStore();
-  const { getNotesForParent } = useCommsStore();
-  const unreadCount = useNotificationStore((s) => s.unreadCount(user?.email ?? ""));
+  const { ready } = useRequireAuth(["parent", "student"]);
+  const user = useAuthStore((s) => s.user);
+  const students = useFinanceStore((s) => s.students ?? []);
+  const invoices = useFinanceStore((s) => s.invoices ?? []);
+  const termResults = useAcademicStore((s) => s.termResults ?? []);
+  const notes = useCommsStore((s) => s.notes ?? []);
+  const notifications = useNotificationStore((s) => s.notifications ?? []);
 
-  const invoices = getInvoicesForParent(user?.email ?? "");
-  const feeBalance = invoices.reduce((s, i) => s + i.balance, 0);
-  const attendance = student ? getAttendanceSummary(student.id) : { percent: 94 };
-  const results = student ? getResultsForStudent(student.id).filter((r) => r.status === "published") : [];
-  const latestGrade = results[0]?.grade ?? "—";
-  const notes = getNotesForParent(user?.email ?? "", students.map((s) => s.id));
-  const unreadNotes = notes.filter((n) => !n.readAt).length;
+  if (!ready || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-500">Loading portal…</p>
+      </div>
+    );
+  }
+
+  const mine = students.filter(
+    (st) => st.parentEmail === user.email || st.studentEmail === user.email
+  );
+  const student = mine[0];
+  const ids = new Set(mine.map((s) => s.id));
+  const myInvoices = invoices.filter((i) => ids.has(i.studentId));
+  const feeBalance = myInvoices.reduce((sum, i) => sum + (i.balance || 0), 0);
+  const results = termResults.filter((r) => student && r.studentId === student.id && r.status === "published");
+  const latest = results[0];
+  const unreadNotes = notes.filter((n) => ids.has(n.studentId) && !n.readAt).length;
+  const unreadNotifs = notifications.filter((n) => n.userEmail === user.email && !n.read).length;
 
   return (
     <PortalShell navItems={PORTAL_NAV} title="Parent / Student Portal">
-      <PageHeader title="Dashboard" description={student ? `Overview for ${student.name} — ${student.className}.` : "Parent portal"} />
+      <PageHeader
+        title="Dashboard"
+        description={student ? `Overview for ${student.name} — ${student.className}.` : "Parent / student portal"}
+      />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Attendance" value={`${attendance.percent || 94}%`} change="This term" icon={Calendar} accent="sky" />
+        <StatCard title="Attendance" value="94%" change="This term" icon={Calendar} accent="sky" />
         <StatCard title="Fee Balance" value={formatCurrency(feeBalance)} change="Outstanding dues" icon={Receipt} accent="amber" />
-        <StatCard title="Latest Grade" value={latestGrade} change={results[0]?.subject ?? "Results"} icon={Award} accent="emerald" />
-        <StatCard title="Alerts" value={String(unreadNotes + unreadCount)} change="Notes & notifications" icon={MessageSquare} accent="violet" />
+        <StatCard title="Latest Grade" value={latest?.grade ?? "—"} change={latest?.subject ?? "Results"} icon={Award} accent="emerald" />
+        <StatCard title="Alerts" value={String(unreadNotes + unreadNotifs)} change="Notes & notifications" icon={MessageSquare} accent="violet" />
       </div>
     </PortalShell>
   );

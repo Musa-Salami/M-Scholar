@@ -10,17 +10,26 @@ import { useAcademicStore, TEACHER_CLASS } from "@/lib/academic-store";
 import { useCommsStore } from "@/lib/comms-store";
 
 export default function TeacherDashboardPage() {
-  useRequireAuth(["class_teacher"]);
+  const { ready } = useRequireAuth(["class_teacher"]);
   const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.className === TEACHER_CLASS));
   const registers = useAcademicStore((s) => s.registers ?? []);
   const termResults = useAcademicStore((s) => s.termResults ?? []);
   const notes = useCommsStore((s) => s.notes ?? []);
   const messages = useCommsStore((s) => s.messages ?? []);
 
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-500">Loading portal…</p>
+      </div>
+    );
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   const todayReg = registers.find((r) => r.className === TEACHER_CLASS && r.date === today);
-  const absentToday = todayReg?.records.filter((r) => r.status === "absent").length ?? 0;
-  const presentToday = todayReg ? todayReg.records.length - absentToday : students.length;
+  const todayRecords = todayReg?.records ?? [];
+  const absentToday = todayRecords.filter((r) => r.status === "absent").length;
+  const presentToday = todayReg ? todayRecords.length - absentToday : students.length;
   const draftResults = termResults.filter((r) => r.status === "draft" && students.some((s) => s.id === r.studentId)).length;
   const classNotes = notes.filter((n) => students.some((s) => s.id === n.studentId)).length;
   const unreadMsgs = messages.filter((m) => m.senderRole === "parent" && !m.readAt).length;

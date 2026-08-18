@@ -404,24 +404,28 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
         }));
       },
 
-      getStudent: (id) => get().students.find((s) => s.id === id),
-      getFeeStructure: (id) => get().feeStructures.find((f) => f.id === id),
-      getPaymentsForInvoice: (invoiceId) => get().payments.filter((p) => p.invoiceId === invoiceId),
+      getStudent: (id) => (get().students ?? []).find((s) => s.id === id),
+      getFeeStructure: (id) => (get().feeStructures ?? []).find((f) => f.id === id),
+      getPaymentsForInvoice: (invoiceId) => (get().payments ?? []).filter((p) => p.invoiceId === invoiceId),
       getPaymentsForParent: (email) => {
         const studentIds = new Set(
-          get().students.filter((s) => s.parentEmail === email || s.studentEmail === email).map((s) => s.id)
+          (get().students ?? []).filter((s) => s.parentEmail === email || s.studentEmail === email).map((s) => s.id)
         );
         return (get().payments ?? []).filter((p) => studentIds.has(p.studentId));
       },
       getInvoicesForParent: (email) => {
         const studentIds = new Set(
-          get().students.filter((s) => s.parentEmail === email || s.studentEmail === email).map((s) => s.id)
+          (get().students ?? []).filter((s) => s.parentEmail === email || s.studentEmail === email).map((s) => s.id)
         );
         return (get().invoices ?? []).filter((i) => studentIds.has(i.studentId));
       },
 
       stats: () => {
-        const { invoices, payments, income, expenditure, staff } = get();
+        const invoices = get().invoices ?? [];
+        const payments = get().payments ?? [];
+        const income = get().income ?? [];
+        const expenditure = get().expenditure ?? [];
+        const staff = get().staff ?? [];
         const feeCollection = payments.reduce((s, p) => s + p.amount, 0);
         const outstanding = invoices.reduce((s, i) => s + i.balance, 0);
         const now = new Date();

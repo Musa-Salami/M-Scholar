@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 export default function Error({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
@@ -14,6 +15,9 @@ export default function Error({
       <p className="mt-2 max-w-md text-sm text-slate-500">
         Please try again. If this continues, return to the school website and sign in from the Login menu.
       </p>
+      {error?.message ? (
+        <p className="mt-3 max-w-lg break-words font-mono text-xs text-slate-400">{error.message}</p>
+      ) : null}
       <div className="mt-6 flex gap-3">
         <button
           onClick={reset}

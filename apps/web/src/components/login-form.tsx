@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Eye, EyeOff, Lock, Mail, ArrowRight, ArrowLeft } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
@@ -21,9 +20,10 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ portal }: LoginFormProps) {
-  const router = useRouter();
   const ready = useAuthReady();
-  const { login, isAuthenticated, user, dashboardPath } = useAuthStore();
+  const login = useAuthStore((s) => s.login);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
   const config = LOGIN_PORTALS[portal];
   const accent = ACCENT[portal];
   const allowedRoles = config.roles as UserRole[];
@@ -37,9 +37,10 @@ export function LoginForm({ portal }: LoginFormProps) {
   useEffect(() => {
     if (!ready) return;
     if (isAuthenticated && user && allowedRoles.includes(user.role)) {
-      router.replace(ROLE_DASHBOARD_PATH[user.role]);
+      const path = ROLE_DASHBOARD_PATH[user.role];
+      window.location.replace(path.endsWith("/") ? path : `${path}/`);
     }
-  }, [ready, isAuthenticated, user, allowedRoles, router]);
+  }, [ready, isAuthenticated, user, allowedRoles]);
 
   const demoAccounts = Object.entries(DEMO_USERS).filter(([, { user: u }]) =>
     allowedRoles.includes(u.role)
@@ -61,7 +62,8 @@ export function LoginForm({ portal }: LoginFormProps) {
       setError(`This account cannot access the ${config.title.toLowerCase()}.`);
       return;
     }
-    router.push(dashboardPath());
+    const path = ROLE_DASHBOARD_PATH[loggedInUser.role];
+    window.location.assign(path.endsWith("/") ? path : `${path}/`);
   };
 
   return (

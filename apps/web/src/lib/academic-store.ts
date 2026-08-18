@@ -96,7 +96,7 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
           ),
         }));
 
-        reg.records
+        (reg.records ?? [])
           .filter((rec) => rec.status === "absent")
           .forEach((rec) => {
             const email = parentEmails[rec.studentId];
@@ -213,7 +213,7 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
       getAttendanceForStudent: (studentId) => {
         const entries: { date: string; status: AttendanceStatus }[] = [];
         get().registers.forEach((reg) => {
-          const rec = reg.records.find((r) => r.studentId === studentId);
+          const rec = (reg.records ?? []).find((r) => r.studentId === studentId);
           if (rec) entries.push({ date: reg.date, status: rec.status });
         });
         return entries.sort((a, b) => b.date.localeCompare(a.date));

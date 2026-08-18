@@ -4,7 +4,6 @@ import { PORTAL_NAV, ATTENDANCE_LABELS, type AttendanceStatus } from "@m-scholar
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader, StatCard } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { useAuthStore } from "@/lib/auth-store";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useAcademicStore } from "@/lib/academic-store";
 import { Calendar } from "lucide-react";
@@ -18,14 +17,38 @@ const STATUS_DOT: Record<AttendanceStatus, string> = {
 };
 
 export default function PortalAttendancePage() {
-  useRequireAuth(["parent", "student"]);
-  const { user } = useAuthStore();
-  const students = useFinanceStore((s) => (s.students ?? []).filter((st) => st.parentEmail === user?.email || st.studentEmail === user?.email));
-  const student = students[0];
-  const { getAttendanceForStudent, getAttendanceSummary } = useAcademicStore();
+  const { ready, user } = useRequireAuth(["parent", "student"]);
+  const studentsAll = useFinanceStore((s) => s.students ?? []);
+  const registers = useAcademicStore((s) => s.registers ?? []);
 
-  const entries = student ? getAttendanceForStudent(student.id) : [];
-  const summary = student ? getAttendanceSummary(student.id) : { present: 0, absent: 0, late: 0, total: 0, percent: 94 };
+  if (!ready || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-500">Loading portal…</p>
+      </div>
+    );
+  }
+
+  const students = studentsAll.filter(
+    (st) => st.parentEmail === user.email || st.studentEmail === user.email
+  );
+  const student = students[0];
+  const entries = student
+    ? registers
+        .map((reg) => {
+          const rec = (reg.records ?? []).find((r) => r.studentId === student.id);
+          return rec ? { date: reg.date, status: rec.status } : null;
+        })
+        .filter((e): e is { date: string; status: AttendanceStatus } => Boolean(e))
+        .sort((a, b) => b.date.localeCompare(a.date))
+    : [];
+  const present = entries.filter((e) => e.status === "present" || e.status === "late").length;
+  const absent = entries.filter((e) => e.status === "absent").length;
+  const summary = {
+    present,
+    absent,
+    percent: entries.length ? Math.round((present / entries.length) * 100) : 94,
+  };
 
   return (
     <PortalShell navItems={PORTAL_NAV} title="Parent / Student Portal">
