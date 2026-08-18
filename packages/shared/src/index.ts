@@ -72,6 +72,7 @@ export const TEACHER_NAV: NavItem[] = [
   { label: "Dashboard", href: "/teacher/dashboard", icon: "LayoutDashboard" },
   { label: "Attendance", href: "/teacher/attendance", icon: "ClipboardCheck" },
   { label: "Assessments", href: "/teacher/assessments", icon: "BookOpen" },
+  { label: "Assignments", href: "/teacher/assignments", icon: "ClipboardList" },
   { label: "Notes", href: "/teacher/notes", icon: "StickyNote" },
   { label: "Messages", href: "/teacher/messages", icon: "MessageSquare" },
 ];

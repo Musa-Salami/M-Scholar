@@ -6,6 +6,7 @@ import type {
   AssessmentScore,
   AttendanceRegister,
   AttendanceStatus,
+  ClassAssignment,
   TermResult,
 } from "@m-scholar/shared";
 import { SUBJECTS, computeGrade } from "@m-scholar/shared";
@@ -35,6 +36,29 @@ const SEED_RESULTS: TermResult[] = [
   { id: "r3", studentId: "s2", subject: "Mathematics", caScore: 29, examScore: 40, totalScore: 69, grade: "B", term: TERM, status: "draft" },
 ];
 
+const SEED_ASSIGNMENTS: ClassAssignment[] = [
+  {
+    id: "hw1",
+    className: TEACHER_CLASS,
+    subject: "English",
+    title: "Comprehension — page 42, exercises 1–5",
+    details: "Complete the workbook exercises and bring them to class on Friday.",
+    dueDate: "2026-08-21",
+    teacherName: "Emeka Nwosu",
+    createdAt: "2026-08-17T09:00:00",
+  },
+  {
+    id: "hw2",
+    className: TEACHER_CLASS,
+    subject: "Mathematics",
+    title: "Algebra practice worksheet",
+    details: "Revise linear equations. The worksheet will be collected in the next Mathematics lesson.",
+    dueDate: "2026-08-22",
+    teacherName: "Emeka Nwosu",
+    createdAt: "2026-08-17T09:30:00",
+  },
+];
+
 const SEED_REGISTERS: AttendanceRegister[] = [
   {
     id: "reg1",
@@ -54,6 +78,7 @@ interface AcademicState {
   assessments: Assessment[];
   scores: AssessmentScore[];
   termResults: TermResult[];
+  assignments: ClassAssignment[];
 
   getRegister: (className: string, date: string) => AttendanceRegister | undefined;
   saveRegister: (className: string, date: string, records: { studentId: string; status: AttendanceStatus; note?: string }[], takenBy: string) => void;
@@ -62,6 +87,7 @@ interface AcademicState {
   setScore: (assessmentId: string, studentId: string, score: number) => void;
   computeTermResults: (className: string, subject: string) => void;
   publishResults: (studentIds: string[], parentEmails: Record<string, string>) => void;
+  addAssignment: (data: Omit<ClassAssignment, "id" | "createdAt">, parentEmails: string[]) => void;
 
   getScoresForAssessment: (assessmentId: string) => AssessmentScore[];
   getResultsForStudent: (studentId: string) => TermResult[];
@@ -73,6 +99,7 @@ interface AcademicState {
     assessments: Assessment[];
     scores: AssessmentScore[];
     termResults: TermResult[];
+    assignments?: ClassAssignment[];
   }) => void;
 }
 
@@ -81,6 +108,7 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
       assessments: SEED_ASSESSMENTS,
       scores: SEED_SCORES,
       termResults: SEED_RESULTS,
+      assignments: SEED_ASSIGNMENTS,
 
       resetToDemo: () =>
         set({
@@ -88,6 +116,7 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
           assessments: SEED_ASSESSMENTS,
           scores: SEED_SCORES,
           termResults: SEED_RESULTS,
+          assignments: SEED_ASSIGNMENTS,
         }),
 
       applyPersisted: (data) =>
@@ -96,6 +125,7 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
           assessments: data.assessments ?? SEED_ASSESSMENTS,
           scores: data.scores ?? [],
           termResults: data.termResults ?? [],
+          assignments: data.assignments ?? [],
         }),
 
       getRegister: (className, date) =>
@@ -238,6 +268,23 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
               href: "/portal/results",
             });
           }
+        });
+      },
+
+      addAssignment: (data, parentEmails) => {
+        const assignment: ClassAssignment = {
+          ...data,
+          id: `hw${Date.now()}`,
+          createdAt: new Date().toISOString(),
+        };
+        set((s) => ({ assignments: [assignment, ...s.assignments] }));
+        Array.from(new Set(parentEmails.filter(Boolean))).forEach((email) => {
+          addNotification({
+            userEmail: email,
+            title: `New assignment: ${data.subject}`,
+            body: `${data.title} is due ${data.dueDate}.`,
+            href: "/portal/dashboard",
+          });
         });
       },
 

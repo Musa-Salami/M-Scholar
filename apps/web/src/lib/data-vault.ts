@@ -18,6 +18,8 @@ export interface AppSnapshot {
       email: string;
       session: string;
       term: string;
+      principalName?: string;
+      nextTermResumptionDate?: string;
     };
   };
   finance: {
@@ -37,6 +39,7 @@ export interface AppSnapshot {
     assessments: unknown[];
     scores: unknown[];
     termResults: unknown[];
+    assignments?: unknown[];
   };
   comms: {
     notes: unknown[];

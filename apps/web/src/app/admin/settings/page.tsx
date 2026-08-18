@@ -44,18 +44,21 @@ export default function AdminSettingsPage() {
         <div className="space-y-5">
           {(
             [
-              { key: "schoolName", label: "School name" },
-              { key: "motto", label: "Motto" },
-              { key: "address", label: "Address" },
-              { key: "phone", label: "Phone" },
-              { key: "email", label: "Contact email" },
-              { key: "session", label: "Academic session" },
-              { key: "term", label: "Current term" },
-            ] as { key: keyof SchoolSettings; label: string }[]
-          ).map(({ key, label }) => (
+              { key: "schoolName", label: "School name", type: "text" },
+              { key: "motto", label: "Motto", type: "text" },
+              { key: "address", label: "Address", type: "text" },
+              { key: "phone", label: "Phone", type: "text" },
+              { key: "email", label: "Contact email", type: "email" },
+              { key: "principalName", label: "Principal's name", type: "text" },
+              { key: "session", label: "Academic session", type: "text" },
+              { key: "term", label: "Current term", type: "text" },
+              { key: "nextTermResumptionDate", label: "Next term resumption date", type: "date" },
+            ] as { key: keyof SchoolSettings; label: string; type: string }[]
+          ).map(({ key, label, type }) => (
             <div key={key}>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
               <input
+                type={type}
                 value={form[key]}
                 onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                 className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"

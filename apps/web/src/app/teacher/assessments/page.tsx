@@ -8,6 +8,7 @@ import { btnPrimary, selectClass } from "@/components/finance-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useClassStudents } from "@/hooks/use-class-students";
 import { useAcademicStore, TEACHER_CLASS, SUBJECTS } from "@/lib/academic-store";
+import { obtainableMarks } from "@/lib/report-card";
 
 export default function TeacherAssessmentsPage() {
   useRequireAuth(["class_teacher"]);
@@ -33,6 +34,7 @@ export default function TeacherAssessmentsPage() {
   };
 
   const draftCount = termResults.filter((r) => r.status === "draft" && students.some((s) => s.id === r.studentId)).length;
+  const marks = obtainableMarks(assessments, TEACHER_CLASS);
 
   return (
     <PortalShell navItems={TEACHER_NAV} title="Class Teacher Portal">
@@ -89,9 +91,9 @@ export default function TeacherAssessmentsPage() {
             <tr>
               <th className="px-6 py-3">Student</th>
               <th className="px-6 py-3">Subject</th>
-              <th className="px-6 py-3">CA</th>
-              <th className="px-6 py-3">Exam</th>
-              <th className="px-6 py-3">Total</th>
+              <th className="px-6 py-3">CA ({marks.ca})</th>
+              <th className="px-6 py-3">Exam ({marks.exam})</th>
+              <th className="px-6 py-3">Total ({marks.total})</th>
               <th className="px-6 py-3">Grade</th>
               <th className="px-6 py-3">Status</th>
             </tr>

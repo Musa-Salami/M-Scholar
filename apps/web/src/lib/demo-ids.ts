@@ -10,6 +10,7 @@ export const DEMO_IDS = {
   expenditure: new Set(["exp1", "exp2", "exp3"]),
   staff: new Set(["st1", "st2", "st3", "st4"]),
   assessments: new Set(["a1", "a2", "a3", "a4", "a5"]),
+  assignments: new Set(["hw1", "hw2"]),
   scores: new Set(["sc1", "sc2", "sc3", "sc4"]),
   results: new Set(["r1", "r2", "r3"]),
   registers: new Set(["reg1"]),

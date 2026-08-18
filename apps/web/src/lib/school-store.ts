@@ -26,6 +26,8 @@ export interface SchoolSettings {
   email: string;
   session: string;
   term: string;
+  principalName: string;
+  nextTermResumptionDate: string;
 }
 
 export const SEED_USERS: SchoolUser[] = [
@@ -55,6 +57,8 @@ export const SEED_SETTINGS: SchoolSettings = {
   email: SCHOOL.email,
   session: "2025/2026",
   term: "First Term",
+  principalName: "The Principal",
+  nextTermResumptionDate: "2026-01-12",
 };
 
 interface SchoolState {

@@ -5,6 +5,7 @@ import type {
   Assessment,
   AssessmentScore,
   AttendanceRegister,
+  ClassAssignment,
   ChatMessage,
   ExpenditureRecord,
   FeeStructure,
@@ -74,6 +75,8 @@ function asSettings(raw: AppSnapshot["school"]["settings"] | undefined): SchoolS
     email: raw?.email || SEED_SETTINGS.email,
     session: raw?.session || SEED_SETTINGS.session,
     term: raw?.term || SEED_SETTINGS.term,
+    principalName: raw?.principalName || SEED_SETTINGS.principalName,
+    nextTermResumptionDate: raw?.nextTermResumptionDate || SEED_SETTINGS.nextTermResumptionDate,
   };
 }
 
@@ -106,6 +109,7 @@ function emptySnapshot(settings?: SchoolSettings): AppSnapshot {
       assessments: [],
       scores: [],
       termResults: [],
+      assignments: [],
     },
     comms: {
       notes: [],
@@ -161,6 +165,7 @@ function stripDemoSeeds(snapshot: AppSnapshot): AppSnapshot {
       termResults: withoutDemo<TermResult>(snapshot.academic.termResults, DEMO_IDS.results).filter((r) =>
         studentIds.has(r.studentId)
       ),
+      assignments: withoutDemo<ClassAssignment>(snapshot.academic.assignments, DEMO_IDS.assignments),
     },
     comms: {
       notes: withoutDemo<TeacherNote>(snapshot.comms.notes, DEMO_IDS.notes).filter((n) => studentIds.has(n.studentId)),
@@ -191,6 +196,7 @@ function hasEnteredRecords(snapshot: AppSnapshot): boolean {
     snapshot.academic.assessments.length > 0 ||
     snapshot.academic.scores.length > 0 ||
     snapshot.academic.termResults.length > 0 ||
+    (snapshot.academic.assignments?.length ?? 0) > 0 ||
     snapshot.comms.notes.length > 0 ||
     snapshot.comms.threads.length > 0 ||
     snapshot.comms.messages.length > 0
@@ -212,6 +218,7 @@ function containsDemoSeeds(snapshot: AppSnapshot): boolean {
     [snapshot.academic.assessments, DEMO_IDS.assessments],
     [snapshot.academic.scores, DEMO_IDS.scores],
     [snapshot.academic.termResults, DEMO_IDS.results],
+    [snapshot.academic.assignments, DEMO_IDS.assignments],
     [snapshot.comms.notes, DEMO_IDS.notes],
     [snapshot.comms.threads, DEMO_IDS.threads],
     [snapshot.comms.messages, DEMO_IDS.messages],
@@ -268,6 +275,7 @@ function collectSnapshot(): AppSnapshot {
       assessments: academic.assessments,
       scores: academic.scores,
       termResults: academic.termResults,
+      assignments: academic.assignments,
     },
     comms: {
       notes: comms.notes,
@@ -303,6 +311,7 @@ function applySnapshot(snapshot: AppSnapshot) {
     assessments: asArray<Assessment>(snapshot.academic.assessments),
     scores: asArray<AssessmentScore>(snapshot.academic.scores),
     termResults: asArray<TermResult>(snapshot.academic.termResults),
+    assignments: asArray<ClassAssignment>(snapshot.academic.assignments),
   });
   useCommsStore.getState().applyPersisted({
     notes: asArray<TeacherNote>(snapshot.comms.notes),

@@ -26,6 +26,24 @@ function estimateWidth(text: string, fontSize: number): number {
   return ascii(text).length * fontSize * 0.52;
 }
 
+function wrapLines(value: string, maxWidth: number, fontSize: number): string[] {
+  const words = ascii(value).split(/\s+/).filter(Boolean);
+  if (!words.length) return [""];
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (estimateWidth(next, fontSize) > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = next;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
 export function formatPdfMoney(amount: number): string {
   return `NGN ${Math.round(amount).toLocaleString("en-NG")}`;
 }
@@ -148,6 +166,48 @@ export class SimplePdf {
       this.text(line, MARGIN, this.y);
       this.y += 16;
     }
+  }
+
+  commentBox(title: string, body: string) {
+    const boxW = PAGE_W - MARGIN * 2;
+    const innerW = boxW - 12;
+    const lines = wrapLines(body, innerW, 9);
+    const h = 24 + lines.length * 13 + 8;
+    this.ensureSpace(h);
+    const top = this.y;
+    this.push(
+      `${rgb(248, 250, 252)} rg ${MARGIN.toFixed(2)} ${this.pdfY(top + h).toFixed(2)} ${boxW.toFixed(2)} ${h.toFixed(2)} re f`
+    );
+    this.push(
+      `${rgb(203, 213, 225)} RG 0.8 w ${MARGIN.toFixed(2)} ${this.pdfY(top + h).toFixed(2)} ${boxW.toFixed(2)} ${h.toFixed(2)} re S`
+    );
+    this.setFont(9, true);
+    this.setColor(15, 23, 42);
+    this.text(title, MARGIN + 6, top + 8);
+    this.setFont(9, false);
+    this.setColor(51, 65, 85);
+    lines.forEach((line, index) => {
+      this.text(line, MARGIN + 6, top + 24 + index * 13);
+    });
+    this.y = top + h + 10;
+  }
+
+  signatureBlock(items: { role: string; name: string }[]) {
+    this.ensureSpace(72);
+    const count = Math.max(items.length, 1);
+    const usable = PAGE_W - MARGIN * 2;
+    const colW = usable / count;
+    items.forEach((item, i) => {
+      const x = MARGIN + i * colW + 6;
+      this.line(x, this.y + 26, x + colW - 18, this.y + 26);
+      this.setFont(8, true);
+      this.setColor(15, 23, 42);
+      this.text(item.role, x, this.y + 32);
+      this.setFont(8, false);
+      this.setColor(71, 85, 105);
+      this.text(item.name, x, this.y + 44);
+    });
+    this.y += 62;
   }
 
   table(headers: string[], rows: string[][]) {

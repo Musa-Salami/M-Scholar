@@ -28,6 +28,17 @@ export interface Assessment {
   term: string;
 }
 
+export interface ClassAssignment {
+  id: string;
+  className: string;
+  subject: string;
+  title: string;
+  details: string;
+  dueDate: string;
+  teacherName: string;
+  createdAt: string;
+}
+
 export interface AssessmentScore {
   id: string;
   assessmentId: string;

@@ -48,8 +48,8 @@ export default function TeacherDashboardPage() {
         {[
           { label: "Take attendance", href: "/teacher/attendance" },
           { label: "Enter assessments", href: "/teacher/assessments" },
+          { label: "Post assignment", href: "/teacher/assignments" },
           { label: "Write notes", href: "/teacher/notes" },
-          { label: "Messages", href: "/teacher/messages" },
         ].map(({ label, href }) => (
           <a
             key={href}

@@ -8,11 +8,13 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useAcademicStore } from "@/lib/academic-store";
 import { ReportCardModal } from "@/components/report-card-modal";
+import { obtainableMarks } from "@/lib/report-card";
 
 export default function PortalResultsPage() {
   const { ready, user } = useRequireAuth(["parent", "student"]);
   const studentsAll = useFinanceStore((s) => s.students ?? []);
   const termResults = useAcademicStore((s) => s.termResults ?? []);
+  const assessments = useAcademicStore((s) => s.assessments ?? []);
   const [showReport, setShowReport] = useState(false);
 
   if (!ready || !user) {
@@ -33,6 +35,7 @@ export default function PortalResultsPage() {
   const average = results.length
     ? Math.round(results.reduce((s, r) => s + r.totalScore, 0) / results.length)
     : 0;
+  const marks = obtainableMarks(assessments, student?.className);
 
   return (
     <PortalShell navItems={PORTAL_NAV} title="Parent / Student Portal">
@@ -63,9 +66,9 @@ export default function PortalResultsPage() {
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                 <tr>
                   <th className="px-6 py-3">Subject</th>
-                  <th className="px-6 py-3">CA</th>
-                  <th className="px-6 py-3">Exam</th>
-                  <th className="px-6 py-3">Total</th>
+                  <th className="px-6 py-3">CA ({marks.ca})</th>
+                  <th className="px-6 py-3">Exam ({marks.exam})</th>
+                  <th className="px-6 py-3">Total ({marks.total})</th>
                   <th className="px-6 py-3">Grade</th>
                 </tr>
               </thead>
