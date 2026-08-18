@@ -43,16 +43,22 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
 
   const downloadPdf = () => {
     const pdf = new SimplePdf();
-    pdf.heading(
-      settings.schoolName,
-      `Official terminal report card — ${settings.term} · ${settings.session}`
-    );
+    pdf.setBrand({
+      schoolName: settings.schoolName,
+      motto: settings.motto,
+      address: settings.address,
+      phone: settings.phone,
+      email: settings.email,
+      accent: "sky",
+      documentType: "Terminal report card",
+    });
+    pdf.heading("Terminal Report Card", `${settings.term} · ${settings.session}`);
     pdf.keyValues([
       ["Name", student?.name ?? "—"],
       ["Admission No.", student?.admissionNo ?? "—"],
       ["Class", student?.className ?? "—"],
       ["Attendance", `${attendance.percent}%`],
-      ["Overall average", `${average}%`],
+      ["Session", settings.session],
       ["Next term resumes", resumption],
     ]);
     pdf.table(
@@ -65,17 +71,15 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
         r.grade,
       ])
     );
+    pdf.callout("Overall average", `${average}%`);
     pdf.commentBox("Class teacher's comment", teacherComment);
     pdf.commentBox("Principal's comment", principalComment);
-    pdf.paragraph(`Next term resumption date: ${resumption}.`);
     pdf.signatureBlock([
       { role: "Class Teacher", name: teacher },
       { role: "Official stamp", name: "School seal" },
       { role: "Principal", name: principal },
     ]);
-    pdf.paragraph(
-      `This is an official record of ${settings.schoolName}. ${settings.address}. ${settings.phone}.`
-    );
+    pdf.paragraph(`This terminal report is an official record of ${settings.schoolName}.`);
     pdf.save(`${student?.admissionNo ?? "report-card"}-report-card.pdf`);
   };
 

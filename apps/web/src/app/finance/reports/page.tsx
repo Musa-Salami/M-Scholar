@@ -5,7 +5,7 @@ import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { DataTable, StatusBadge } from "@/components/finance-ui";
 import { PdfCsvButtons } from "@/components/receipt-modal";
-import { downloadCsv, downloadTablePdf, formatPdfMoney } from "@/lib/pdf";
+import { downloadCsv, downloadTablePdf, formatPdfMoney, type PdfBrand } from "@/lib/pdf";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useSchoolStore } from "@/lib/school-store";
@@ -19,6 +19,15 @@ export default function ReportsPage() {
 
   const debtors = invoices.filter((i) => i.balance > 0);
   const school = settings.schoolName;
+  const brand = (documentType: string): PdfBrand => ({
+    schoolName: settings.schoolName,
+    motto: settings.motto,
+    address: settings.address,
+    phone: settings.phone,
+    email: settings.email,
+    accent: "emerald",
+    documentType,
+  });
 
   const feeHeaders = ["Receipt", "Student", "Amount", "Date"];
   const feeRows = payments.map((p) => {
@@ -69,27 +78,56 @@ export default function ReportsPage() {
       title: "Fee Collection Report",
       desc: "All recorded fee payments",
       onPdf: () =>
-        downloadTablePdf("fee-collection-report.pdf", school, "Fee collection report", feeHeaders, feeRows),
+        downloadTablePdf(
+          "fee-collection-report.pdf",
+          school,
+          "Fee collection report",
+          feeHeaders,
+          feeRows,
+          brand("Fee collection report")
+        ),
       onCsv: () => downloadCsv("fee-collection-report.csv", feeHeaders, feeCsvRows),
     },
     {
       title: "Outstanding Balances",
       desc: "Debtors list by invoice",
       onPdf: () =>
-        downloadTablePdf("outstanding-fees.pdf", school, "Outstanding fee balances", debtorHeaders, debtorRows),
+        downloadTablePdf(
+          "outstanding-fees.pdf",
+          school,
+          "Outstanding fee balances",
+          debtorHeaders,
+          debtorRows,
+          brand("Outstanding balances")
+        ),
       onCsv: () => downloadCsv("outstanding-fees.csv", debtorHeaders, debtorCsvRows),
     },
     {
       title: "Income vs Expenditure",
       desc: "Combined ledger export",
       onPdf: () =>
-        downloadTablePdf("income-expenditure.pdf", school, "Income vs expenditure", ledgerHeaders, ledgerRows),
+        downloadTablePdf(
+          "income-expenditure.pdf",
+          school,
+          "Income vs expenditure",
+          ledgerHeaders,
+          ledgerRows,
+          brand("Income vs expenditure")
+        ),
       onCsv: () => downloadCsv("income-expenditure.csv", ledgerHeaders, ledgerCsvRows),
     },
     {
       title: "Payroll Summary",
       desc: "Staff net pay register",
-      onPdf: () => downloadTablePdf("payroll-summary.pdf", school, "Payroll summary", payrollHeaders, payrollRows),
+      onPdf: () =>
+        downloadTablePdf(
+          "payroll-summary.pdf",
+          school,
+          "Payroll summary",
+          payrollHeaders,
+          payrollRows,
+          brand("Payroll summary")
+        ),
       onCsv: () => downloadCsv("payroll-summary.csv", payrollHeaders, payrollCsvRows),
     },
   ];

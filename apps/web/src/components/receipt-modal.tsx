@@ -39,8 +39,17 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
     setBusy(true);
     try {
       const pdf = new SimplePdf();
+      pdf.setBrand({
+        schoolName: settings.schoolName,
+        motto: settings.motto,
+        address: settings.address,
+        phone: settings.phone,
+        email: settings.email,
+        accent: "emerald",
+        documentType: "Fee receipt",
+      });
       pdf.setWatermark(stamp.label, stamp.rgb);
-      pdf.heading(settings.schoolName, "Official fee payment receipt");
+      pdf.heading("Official Fee Receipt", stamp.label);
       pdf.keyValues([
         ["Receipt No.", payment.receiptNo],
         ["Invoice No.", invoice?.invoiceNo ?? "—"],
@@ -51,13 +60,11 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
         ["Payment method", PAYMENT_METHOD_LABELS[payment.method]],
         ["Reference", payment.reference],
         ["Invoice total", formatPdfMoney(invoice?.totalAmount ?? payment.amount)],
-        ["Amount paid now", formatPdfMoney(payment.amount)],
-        ["Total paid on invoice", formatPdfMoney(invoice?.amountPaid ?? payment.amount)],
         ["Balance remaining", formatPdfMoney(invoice?.balance ?? 0)],
-        ["Status", stamp.label],
       ]);
+      pdf.callout("Amount paid", formatPdfMoney(payment.amount));
       pdf.paragraph(
-        `Received by ${payment.recordedBy}. ${settings.address}. ${settings.phone}. Keep this receipt for your records.`
+        `Received by ${payment.recordedBy}. Keep this receipt as an official record of payment.`
       );
       pdf.save(`${payment.receiptNo}.pdf`);
     } finally {
