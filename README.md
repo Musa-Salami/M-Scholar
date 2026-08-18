@@ -4,7 +4,7 @@ School Management System — multi-portal platform for Super Admin, Account Offi
 
 ## Documentation
 
-See [`M-SCHOLAR_COMPLETE_TECHNICAL_SPECIFICATION.txt`](./M-SCHOLAR_COMPLETE_TECHNICAL_SPECIFICATION.txt) for the full technical specification, architecture, API design, database schema, and process flowcharts.
+See [`M-SCHOLAR_COMPLETE_TECHNICAL_SPECIFICATION.txt`](./M-SCHOLAR_COMPLETE_TECHNICAL_SPECIFICATION.txt) for the full technical specification.
 
 ## Live Site
 
@@ -14,15 +14,35 @@ See [`M-SCHOLAR_COMPLETE_TECHNICAL_SPECIFICATION.txt`](./M-SCHOLAR_COMPLETE_TECH
 
 - **GitHub:** [Musa-Salami/M-Scholar](https://github.com/Musa-Salami/M-Scholar)
 
-## Quick Start (coming phases)
+## Quick Start
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Deploy
+Open [http://localhost:3000](http://localhost:3000) and sign in with a demo account on the login page.
+
+### Demo accounts
+
+| Role | Email | Password |
+|------|-------|----------|
+| Super Admin | admin@mscholar.app | admin123 |
+| Account Officer | finance@mscholar.app | finance123 |
+| Class Teacher | teacher@mscholar.app | teacher123 |
+| Parent | parent@mscholar.app | parent123 |
+
+## Build & Deploy
 
 ```bash
-firebase deploy --only hosting
+npm run build
+firebase deploy --only hosting:mscholar
+```
+
+## Project structure
+
+```
+apps/web/          Next.js 15 frontend (static export)
+packages/shared/   Shared types, roles, navigation config
+public/            Legacy static landing (pre-build)
 ```
