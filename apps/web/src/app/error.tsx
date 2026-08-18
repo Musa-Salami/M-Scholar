@@ -13,7 +13,7 @@ export default function Error({
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-6 text-center">
       <h1 className="font-display text-2xl font-bold text-slate-900">Portal failed to load</h1>
       <p className="mt-2 max-w-md text-sm text-slate-500">
-        Please try again. If this continues, return to the school website and sign in from the Login menu.
+        Please try again. If this continues, return to the school website and open School Portal.
       </p>
       {error?.message ? (
         <p className="mt-3 max-w-lg break-words font-mono text-xs text-slate-400">{error.message}</p>

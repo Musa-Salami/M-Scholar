@@ -1,14 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, GraduationCap, Users, BookOpen, Award } from "lucide-react";
-import { SCHOOL, LOGIN_PORTALS } from "@m-scholar/shared";
-
-const PORTAL_CARDS = [
-  { key: "student" as const, icon: GraduationCap, color: "border-sky-200 bg-sky-50 hover:border-sky-400" },
-  { key: "teacher" as const, icon: BookOpen, color: "border-amber-200 bg-amber-50 hover:border-amber-400" },
-  { key: "parent" as const, icon: Users, color: "border-emerald-200 bg-emerald-50 hover:border-emerald-400" },
-];
+import { ArrowRight, Award } from "lucide-react";
+import { SCHOOL } from "@m-scholar/shared";
 
 export default function HomePage() {
   return (
@@ -47,35 +41,6 @@ export default function HomePage() {
               <p className="mt-1 text-sm text-slate-500">{label}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Portal login cards */}
-      <section className="bg-slate-50 py-20">
-        <div className="mx-auto max-w-6xl px-4 md:px-6">
-          <div className="text-center">
-            <h2 className="font-display text-3xl font-bold text-slate-900">School Portal</h2>
-            <p className="mt-2 text-slate-500">Students, teachers, and parents — sign in to your portal</p>
-          </div>
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {PORTAL_CARDS.map(({ key, icon: Icon, color }) => {
-              const portal = LOGIN_PORTALS[key];
-              return (
-                <Link
-                  key={key}
-                  href={portal.href}
-                  className={`card-shadow rounded-2xl border-2 p-8 transition hover:-translate-y-1 ${color}`}
-                >
-                  <Icon className="h-10 w-10 text-slate-700" />
-                  <h3 className="mt-4 font-display text-xl font-bold text-slate-900">{portal.title}</h3>
-                  <p className="mt-2 text-sm text-slate-600">{portal.description}</p>
-                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-700">
-                    Sign in <ArrowRight className="h-4 w-4" />
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
         </div>
       </section>
 

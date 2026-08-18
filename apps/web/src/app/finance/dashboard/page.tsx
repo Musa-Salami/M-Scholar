@@ -36,7 +36,7 @@ export default function FinanceDashboardPage() {
   const overdueCount = invoices.filter((i) => i.status === "overdue").length;
 
   return (
-    <PortalShell navItems={FINANCE_NAV} title="Account Officer Portal">
+    <PortalShell navItems={FINANCE_NAV} title="Finance Officer Portal">
       <PageHeader title="Finance Dashboard" description="Income, expenditure, fees, and payroll overview." />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard title="Fee Collection" value={formatCurrency(s.feeCollection)} change={`${collectionRate}% invoices fully paid`} icon={Receipt} accent="emerald" />

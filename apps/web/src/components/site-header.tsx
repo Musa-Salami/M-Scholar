@@ -3,15 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, ChevronDown, LogIn } from "lucide-react";
-import { PUBLIC_NAV, SCHOOL, LOGIN_PORTALS } from "@m-scholar/shared";
+import { Menu, X, LayoutDashboard } from "lucide-react";
+import { PUBLIC_NAV, SCHOOL } from "@m-scholar/shared";
 import { useAuthStore } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
   const { isAuthenticated, user, dashboardPath, logout } = useAuthStore();
 
   return (
@@ -59,32 +58,13 @@ export function SiteHeader() {
               </button>
             </div>
           ) : (
-            <div className="relative">
-              <button
-                onClick={() => setLoginOpen(!loginOpen)}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                <LogIn className="h-4 w-4" />
-                Login
-                <ChevronDown className="h-4 w-4" />
-              </button>
-              {loginOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setLoginOpen(false)} />
-                  <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-slate-200 bg-white py-2 shadow-xl">
-                    <Link href="/login/student" className="block px-4 py-2.5 text-sm hover:bg-sky-50" onClick={() => setLoginOpen(false)}>
-                      {LOGIN_PORTALS.student.title}
-                    </Link>
-                    <Link href="/login/teacher" className="block px-4 py-2.5 text-sm hover:bg-amber-50" onClick={() => setLoginOpen(false)}>
-                      {LOGIN_PORTALS.teacher.title}
-                    </Link>
-                    <Link href="/login/parent" className="block px-4 py-2.5 text-sm hover:bg-emerald-50" onClick={() => setLoginOpen(false)}>
-                      {LOGIN_PORTALS.parent.title}
-                    </Link>
-                  </div>
-                </>
-              )}
-            </div>
+            <Link
+              href="/login/"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              School Portal
+            </Link>
           )}
 
           <button className="rounded-lg p-2 lg:hidden" onClick={() => setMobileOpen(true)}>
@@ -108,9 +88,9 @@ export function SiteHeader() {
                 </Link>
               ))}
               <div className="my-3 border-t" />
-              <Link href="/login/student" className="rounded-lg px-3 py-3 text-sm font-medium text-sky-700">Student Login</Link>
-              <Link href="/login/teacher" className="rounded-lg px-3 py-3 text-sm font-medium text-amber-700">Teacher Login</Link>
-              <Link href="/login/parent" className="rounded-lg px-3 py-3 text-sm font-medium text-emerald-700">Parent Login</Link>
+              <Link href="/login/" className="rounded-lg px-3 py-3 text-sm font-medium text-blue-700" onClick={() => setMobileOpen(false)}>
+                School Portal
+              </Link>
             </nav>
           </aside>
         </div>

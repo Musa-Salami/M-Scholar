@@ -20,7 +20,7 @@ export interface AuthUser {
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: "Super Admin",
-  account_officer: "Account Officer",
+  account_officer: "Finance Officer",
   class_teacher: "Class Teacher",
   parent: "Parent",
   student: "Student",

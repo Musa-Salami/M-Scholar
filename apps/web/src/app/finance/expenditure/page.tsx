@@ -38,7 +38,7 @@ export default function ExpenditurePage() {
   };
 
   return (
-    <PortalShell navItems={FINANCE_NAV} title="Account Officer Portal">
+    <PortalShell navItems={FINANCE_NAV} title="Finance Officer Portal">
       <PageHeader
         title="Expenditure"
         description="Record and categorize school expenses."

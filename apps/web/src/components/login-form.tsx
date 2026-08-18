@@ -9,10 +9,10 @@ import { DEMO_USERS, ROLE_DASHBOARD_PATH, SCHOOL, LOGIN_PORTALS, type LoginPorta
 import { cn } from "@/lib/utils";
 
 const ACCENT: Record<LoginPortal, { btn: string; ring: string; bg: string }> = {
-  student: { btn: "bg-sky-600 hover:bg-sky-700", ring: "focus:ring-sky-500", bg: "from-sky-600 to-sky-800" },
+  family: { btn: "bg-sky-600 hover:bg-sky-700", ring: "focus:ring-sky-500", bg: "from-sky-600 to-sky-800" },
   teacher: { btn: "bg-amber-600 hover:bg-amber-700", ring: "focus:ring-amber-500", bg: "from-amber-500 to-amber-700" },
-  parent: { btn: "bg-emerald-600 hover:bg-emerald-700", ring: "focus:ring-emerald-500", bg: "from-emerald-600 to-emerald-800" },
-  staff: { btn: "bg-violet-600 hover:bg-violet-700", ring: "focus:ring-violet-500", bg: "from-violet-600 to-violet-800" },
+  admin: { btn: "bg-violet-600 hover:bg-violet-700", ring: "focus:ring-violet-500", bg: "from-violet-600 to-violet-800" },
+  finance: { btn: "bg-emerald-600 hover:bg-emerald-700", ring: "focus:ring-emerald-500", bg: "from-emerald-600 to-emerald-800" },
 };
 
 interface LoginFormProps {
@@ -115,7 +115,7 @@ export function LoginForm({ portal }: LoginFormProps) {
 
           {demoAccounts.length > 0 && (
             <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Demo account</p>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Demo accounts</p>
               {demoAccounts.map(([demoEmail, { password: demoPass, user: u }]) => (
                 <button key={demoEmail} type="button" onClick={() => { setEmail(demoEmail); setPassword(demoPass); }}
                   className="flex w-full items-center justify-between rounded-lg bg-white px-3 py-2 text-left text-sm hover:bg-slate-100">
@@ -128,7 +128,7 @@ export function LoginForm({ portal }: LoginFormProps) {
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Wrong portal?{" "}
-            <Link href="/login" className="font-medium text-blue-600 hover:underline">Choose another login</Link>
+            <Link href="/login/" className="font-medium text-blue-600 hover:underline">Back to School Portal</Link>
           </p>
         </div>
       </div>

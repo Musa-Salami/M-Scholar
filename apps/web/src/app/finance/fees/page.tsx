@@ -44,7 +44,7 @@ export default function FeesPage() {
   };
 
   return (
-    <PortalShell navItems={FINANCE_NAV} title="Account Officer Portal">
+    <PortalShell navItems={FINANCE_NAV} title="Finance Officer Portal">
       <PageHeader
         title="Fees & Invoices"
         description="Define fee structures and generate student invoices."

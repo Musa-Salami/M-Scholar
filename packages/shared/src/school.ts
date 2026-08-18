@@ -24,38 +24,38 @@ export const PUBLIC_NAV = [
   { label: "Contact", href: "/contact" },
 ] as const;
 
-export type LoginPortal = "student" | "teacher" | "parent" | "staff";
+export type LoginPortal = "family" | "teacher" | "admin" | "finance";
 
 export const LOGIN_PORTALS: Record<
   LoginPortal,
   { title: string; description: string; href: string; roles: string[]; accent: string }
 > = {
-  student: {
-    title: "Student Login",
-    description: "View results, attendance, fees, and messages.",
-    href: "/login/student",
-    roles: ["student"],
+  family: {
+    title: "Parent & Student",
+    description: "Attendance, fees, results, notes, and messages in one portal.",
+    href: "/login/family",
+    roles: ["parent", "student"],
     accent: "sky",
   },
   teacher: {
-    title: "Teacher Login",
+    title: "Teacher",
     description: "Attendance, assessments, notes, and parent communication.",
     href: "/login/teacher",
     roles: ["class_teacher"],
     accent: "amber",
   },
-  parent: {
-    title: "Parent Login",
-    description: "Track your child's progress, fees, and school updates.",
-    href: "/login/parent",
-    roles: ["parent"],
-    accent: "emerald",
-  },
-  staff: {
-    title: "Staff Login",
-    description: "Administration, finance, and school management.",
-    href: "/login/staff",
-    roles: ["super_admin", "account_officer"],
+  admin: {
+    title: "Admin",
+    description: "Users, classes, school settings, and audit log.",
+    href: "/login/admin",
+    roles: ["super_admin"],
     accent: "violet",
+  },
+  finance: {
+    title: "Finance Officer",
+    description: "Fees, payments, payroll, income, and expenditure.",
+    href: "/login/finance",
+    roles: ["account_officer"],
+    accent: "emerald",
   },
 };

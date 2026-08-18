@@ -31,7 +31,7 @@ export default function PayrollPage() {
   };
 
   return (
-    <PortalShell navItems={FINANCE_NAV} title="Account Officer Portal">
+    <PortalShell navItems={FINANCE_NAV} title="Finance Officer Portal">
       <PageHeader title="Payroll" description="Manage staff salaries and process monthly payroll." />
 
       <div className="card-shadow mb-6 flex flex-col gap-4 rounded-2xl border border-amber-100 bg-amber-50 p-5 sm:flex-row sm:items-center sm:justify-between">

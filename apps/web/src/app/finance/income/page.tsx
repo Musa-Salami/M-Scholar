@@ -38,7 +38,7 @@ export default function IncomePage() {
   };
 
   return (
-    <PortalShell navItems={FINANCE_NAV} title="Account Officer Portal">
+    <PortalShell navItems={FINANCE_NAV} title="Finance Officer Portal">
       <PageHeader
         title="Income"
         description="Track all school income sources."

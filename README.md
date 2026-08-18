@@ -33,13 +33,15 @@ Open [http://localhost:3000](http://localhost:3000) for the public school websit
 | News & Events | `/news` |
 | Contact | `/contact` |
 
-### Portal logins (authenticated users)
-| Role | Login URL | Portal after sign-in |
-|------|-----------|----------------------|
-| Student | `/login/student` | `/portal/*` |
+### School Portal
+Open **School Portal** from the website header, or go to `/login`.
+
+| Portal | Login URL | After sign-in |
+|--------|-----------|---------------|
+| Parent & Student | `/login/family` | `/portal/*` |
 | Teacher | `/login/teacher` | `/teacher/*` |
-| Parent | `/login/parent` | `/portal/*` |
-| Staff (Admin/Finance) | `/login/staff` | `/admin/*` or `/finance/*` |
+| Admin | `/login/admin` | `/admin/*` |
+| Finance Officer | `/login/finance` | `/finance/*` |
 
 ### Demo accounts
 

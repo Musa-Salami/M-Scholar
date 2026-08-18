@@ -1,5 +1,5 @@
 import { LoginForm } from "@/components/login-form";
 
-export default function ParentLoginPage() {
+export default function FamilyLoginPage() {
   return <LoginForm portal="family" />;
 }

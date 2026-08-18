@@ -47,7 +47,7 @@ export default function PaymentsPage() {
   };
 
   return (
-    <PortalShell navItems={FINANCE_NAV} title="Account Officer Portal">
+    <PortalShell navItems={FINANCE_NAV} title="Finance Officer Portal">
       <PageHeader title="Payments" description="Record fee payments and issue receipts." />
 
       <form onSubmit={handleSubmit} className="card-shadow mb-8 rounded-2xl border border-slate-100 bg-white p-6">
