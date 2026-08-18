@@ -1,25 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { GraduationCap, BookOpen, Users, Shield, ArrowLeft } from "lucide-react";
-import { SCHOOL, LOGIN_PORTALS, type LoginPortal } from "@m-scholar/shared";
+import { GraduationCap, BookOpen, Users, ArrowLeft } from "lucide-react";
+import { SCHOOL, LOGIN_PORTALS } from "@m-scholar/shared";
 
-const ICONS: Record<LoginPortal, typeof GraduationCap> = {
+const ICONS = {
   student: GraduationCap,
   teacher: BookOpen,
   parent: Users,
-  staff: Shield,
-};
+} as const;
 
-const COLORS: Record<LoginPortal, string> = {
+const COLORS = {
   student: "border-sky-200 hover:border-sky-400 hover:bg-sky-50",
   teacher: "border-amber-200 hover:border-amber-400 hover:bg-amber-50",
   parent: "border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50",
-  staff: "border-violet-200 hover:border-violet-400 hover:bg-violet-50",
-};
+} as const;
 
 export default function LoginChooserPage() {
-  const portals: LoginPortal[] = ["student", "teacher", "parent"];
+  const portals = ["student", "teacher", "parent"] as const;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -48,12 +46,6 @@ export default function LoginChooserPage() {
           })}
         </div>
 
-        <p className="mt-10 text-center text-sm text-slate-500">
-          School staff?{" "}
-          <Link href="/login/staff" className="font-medium text-violet-600 hover:underline">
-            Admin &amp; finance login
-          </Link>
-        </p>
       </div>
     </div>
   );

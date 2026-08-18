@@ -81,10 +81,6 @@ export function SiteHeader() {
                     <Link href="/login/parent" className="block px-4 py-2.5 text-sm hover:bg-emerald-50" onClick={() => setLoginOpen(false)}>
                       {LOGIN_PORTALS.parent.title}
                     </Link>
-                    <div className="my-1 border-t border-slate-100" />
-                    <Link href="/login/staff" className="block px-4 py-2.5 text-xs text-slate-500 hover:bg-slate-50" onClick={() => setLoginOpen(false)}>
-                      Staff / Admin Login
-                    </Link>
                   </div>
                 </>
               )}

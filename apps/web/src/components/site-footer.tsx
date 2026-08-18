@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { SCHOOL, PUBLIC_NAV, LOGIN_PORTALS } from "@m-scholar/shared";
-import { Mail, Phone, MapPin } from "lucide-react";
-
+import { Mail, Phone, MapPin, ShieldCheck } from "lucide-react";
 export function SiteFooter() {
   return (
     <footer className="border-t border-slate-200 bg-slate-900 text-slate-300">
@@ -29,13 +28,21 @@ export function SiteFooter() {
             <li><Link href="/login/student" className="hover:text-white">{LOGIN_PORTALS.student.title}</Link></li>
             <li><Link href="/login/teacher" className="hover:text-white">{LOGIN_PORTALS.teacher.title}</Link></li>
             <li><Link href="/login/parent" className="hover:text-white">{LOGIN_PORTALS.parent.title}</Link></li>
-            <li><Link href="/login/staff" className="hover:text-white text-slate-500">{LOGIN_PORTALS.staff.title}</Link></li>
           </ul>
         </div>
       </div>
-      <div className="border-t border-slate-800 py-6 text-center text-xs text-slate-500">
-        © {new Date().getFullYear()} {SCHOOL.name}. All rights reserved.
-      </div>
-    </footer>
+      <div className="border-t border-slate-800 py-6">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-2 gap-y-1 px-4 text-center text-xs text-slate-500 md:px-6">
+          <span>© {new Date().getFullYear()} {SCHOOL.name}. All rights reserved.</span>
+          <Link
+            href="/login/staff"
+            title="Staff portal"
+            aria-label="Staff portal sign in"
+            className="inline-flex items-center text-slate-600 transition hover:text-slate-400"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.75} />
+          </Link>
+        </div>
+      </div>    </footer>
   );
 }
