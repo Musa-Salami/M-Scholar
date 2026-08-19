@@ -72,7 +72,7 @@ export default function AdminStudentsPage() {
 
   const classOptions = classes.length
     ? classes.map((c) => c.name)
-    : ["Nursery 1", "Primary 1", "JSS 1A", "JSS 1B", "JSS 2A", "SS 1 Science", "SS 2 Arts"];
+    : ["Kindergarten", "Nursery 1", "Nursery 2", "Primary 1", "Primary 3"];
   const readOnly = mode === "view";
 
   const generatedNo = useMemo(() => {
@@ -96,8 +96,8 @@ export default function AdminStudentsPage() {
 
   if (!authReady || !schoolReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-sm text-slate-500">Loading portal…</p>
+      <div className="flex min-h-screen items-center justify-center bg-cream">
+        <p className="text-sm text-muted">Loading portal…</p>
       </div>
     );
   }
@@ -202,7 +202,7 @@ export default function AdminStudentsPage() {
               </select>
               {mode === "enroll" && form.className && !levelOk && (
                 <p className="mt-1 text-xs text-amber-700">
-                  Class name should start with Nursery, Primary, JSS, or SS so the admission number can be generated.
+                  Class name should start with Kindergarten, Nursery, or Primary so the admission number can be generated.
                 </p>
               )}
             </FormField>

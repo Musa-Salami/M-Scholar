@@ -10,7 +10,7 @@ const SEED_NOTES: TeacherNote[] = [
     studentId: "s1",
     teacherName: "Emeka Nwosu",
     title: "Excellent class participation",
-    body: "Amina has shown great improvement in Mathematics this week. Keep encouraging her at home.",
+    body: "Amina has shown great improvement in phonics and number work this week. Keep encouraging her at home.",
     priority: "info",
     createdAt: "2026-02-08T09:00:00",
   },
@@ -19,7 +19,7 @@ const SEED_NOTES: TeacherNote[] = [
     studentId: "s1",
     teacherName: "Emeka Nwosu",
     title: "Homework reminder",
-    body: "Please ensure Amina completes her English assignment due Friday.",
+    body: "Please ensure Amina completes her phonics workbook pages due Friday.",
     priority: "warning",
     createdAt: "2026-02-10T14:30:00",
   },
@@ -31,7 +31,7 @@ const SEED_THREADS: MessageThread[] = [
     studentId: "s1",
     parentEmail: "parent@mscholar.app",
     teacherName: "Emeka Nwosu",
-    subject: "Amina Bello — JSS 2A",
+    subject: "Amina Bello — Primary 1",
   },
 ];
 
@@ -41,7 +41,7 @@ const SEED_MESSAGES: ChatMessage[] = [
     threadId: "t1",
     senderRole: "parent",
     senderName: "Fatima Bello",
-    body: "Good afternoon sir, I wanted to ask about Amina's Mathematics homework.",
+    body: "Good afternoon sir, I wanted to ask about Amina's phonics homework.",
     createdAt: "2026-02-09T10:00:00",
   },
   {
@@ -49,7 +49,7 @@ const SEED_MESSAGES: ChatMessage[] = [
     threadId: "t1",
     senderRole: "teacher",
     senderName: "Emeka Nwosu",
-    body: "Good afternoon Mrs. Bello. The homework is on page 42, exercises 1-5. Due on Friday.",
+    body: "Good afternoon Mrs. Bello. The homework is page 12 of the phonics workbook. Due on Friday.",
     createdAt: "2026-02-09T11:30:00",
   },
 ];

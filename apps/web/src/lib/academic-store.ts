@@ -12,7 +12,7 @@ import type {
 import { SUBJECTS, computeGrade } from "@m-scholar/shared";
 import { addNotification } from "@/lib/notification-store";
 
-const TEACHER_CLASS = "JSS 2A";
+const TEACHER_CLASS = "Primary 1";
 const TERM = "First Term";
 
 const SEED_ASSESSMENTS: Assessment[] = [
@@ -41,8 +41,8 @@ const SEED_ASSIGNMENTS: ClassAssignment[] = [
     id: "hw1",
     className: TEACHER_CLASS,
     subject: "English",
-    title: "Comprehension — page 42, exercises 1–5",
-    details: "Complete the workbook exercises and bring them to class on Friday.",
+    title: "Phonics workbook — page 12, sounds of the week",
+    details: "Practise the letter sounds at home and bring the workbook on Friday.",
     dueDate: "2026-08-21",
     teacherName: "Emeka Nwosu",
     createdAt: "2026-08-17T09:00:00",
@@ -50,9 +50,9 @@ const SEED_ASSIGNMENTS: ClassAssignment[] = [
   {
     id: "hw2",
     className: TEACHER_CLASS,
-    subject: "Mathematics",
-    title: "Algebra practice worksheet",
-    details: "Revise linear equations. The worksheet will be collected in the next Mathematics lesson.",
+    subject: "Qur'an",
+    title: "Qur'an recitation practice",
+    details: "Revise the short surah taught this week. Recitation will be heard in the next Tahfeez lesson.",
     dueDate: "2026-08-22",
     teacherName: "Emeka Nwosu",
     createdAt: "2026-08-17T09:30:00",

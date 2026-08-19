@@ -28,6 +28,10 @@ Accessible institutional editorial. Soft depth, gold rules, cream paper. Not cla
 
 Gold header/footer rule, 160ms press highlight (gold ring + slight scale) on every control, photo overlay hero. Honor `prefers-reduced-motion`. Layout reflows from 375px.
 
+## Portals
+
+Same cream paper, navy chrome, and gold rule as the public site. Role colour is only a badge / wayfinding tint — not a second brand. Sidebar shows the crest. 44px tap targets. Lucide icons, not emoji.
+
 ## Avoid
 
 Emoji-as-icons, hover-only actions, invented Lagos/WAEC stats, mixing playful kids-app clay with the crest.

@@ -21,7 +21,7 @@ export function SiteHeader() {
       <div className="gold-rule" />
       <div className="mx-auto flex min-w-0 max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:px-4 md:px-6">
         <Link href="/" className="flex min-h-11 min-w-0 items-center gap-2 sm:gap-3">
-          <BrandLogo size={44} className="shrink-0 sm:h-12 sm:w-12" />
+          <BrandLogo size={64} className="h-14 w-14 shrink-0 sm:h-16 sm:w-16" />
           <div className="min-w-0">
             <p className="truncate font-display text-xs font-semibold leading-tight text-brand sm:text-sm">{SCHOOL.shortName}</p>
             <p className="hidden max-w-[16rem] truncate text-[11px] leading-snug text-muted sm:block">{SCHOOL.motto}</p>

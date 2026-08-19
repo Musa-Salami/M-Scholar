@@ -24,10 +24,10 @@ export function DataTable({
   children: React.ReactNode;
 }) {
   return (
-    <div className="card-shadow overflow-hidden rounded-2xl border border-slate-100 bg-white">
+    <div className="card-shadow overflow-hidden rounded-2xl border border-border bg-white">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <thead className="bg-cream text-left text-xs font-semibold uppercase tracking-wide text-muted">
             <tr>
               {headers.map((h) => (
                 <th key={h} className="px-6 py-3 whitespace-nowrap">
@@ -36,7 +36,7 @@ export function DataTable({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">{children}</tbody>
+          <tbody className="divide-y divide-border">{children}</tbody>
         </table>
       </div>
     </div>
@@ -52,19 +52,19 @@ export function FormField({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
+      <label className="mb-1.5 block text-sm font-medium text-ink">{label}</label>
       {children}
     </div>
   );
 }
 
 export const inputClass =
-  "w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500";
+  "w-full rounded-xl border border-border bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-gold";
 
 export const selectClass = inputClass;
 
 export const btnPrimary =
-  "rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60";
+  "min-h-11 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60";
 
 export const btnSecondary =
-  "rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50";
+  "min-h-11 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-cream";

@@ -79,8 +79,8 @@ export default function AdminUsersPage() {
 
   if (!authReady || !schoolReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-sm text-slate-500">Loading portal…</p>
+      <div className="flex min-h-screen items-center justify-center bg-cream">
+        <p className="text-sm text-muted">Loading portal…</p>
       </div>
     );
   }

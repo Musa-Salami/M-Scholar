@@ -6,14 +6,15 @@ import { Eye, EyeOff, Lock, Mail, Phone, ArrowRight, ArrowLeft } from "lucide-re
 import { useAuthStore } from "@/lib/auth-store";
 import { useAuthReady } from "@/hooks/use-auth-ready";
 import { DEMO_USERS, ROLE_DASHBOARD_PATH, SCHOOL, LOGIN_PORTALS, type LoginPortal, type UserRole } from "@m-scholar/shared";
+import { BrandLogo } from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
 import { pageHref } from "@/lib/paths";
 
-const ACCENT: Record<LoginPortal, { btn: string; ring: string; bg: string }> = {
-  family: { btn: "bg-sky-600 hover:bg-sky-700", ring: "focus:ring-sky-500", bg: "from-sky-600 to-sky-800" },
-  teacher: { btn: "bg-amber-600 hover:bg-amber-700", ring: "focus:ring-amber-500", bg: "from-amber-500 to-amber-700" },
-  admin: { btn: "bg-violet-600 hover:bg-violet-700", ring: "focus:ring-violet-500", bg: "from-violet-600 to-violet-800" },
-  finance: { btn: "bg-emerald-600 hover:bg-emerald-700", ring: "focus:ring-emerald-500", bg: "from-emerald-600 to-emerald-800" },
+const ACCENT: Record<LoginPortal, { badge: string }> = {
+  family: { badge: "bg-sky-100 text-sky-800" },
+  teacher: { badge: "bg-amber-100 text-amber-900" },
+  admin: { badge: "bg-violet-100 text-violet-800" },
+  finance: { badge: "bg-emerald-100 text-emerald-800" },
 };
 
 interface LoginFormProps {
@@ -72,35 +73,43 @@ export function LoginForm({ portal }: LoginFormProps) {
   const IdentifierIcon = phoneLogin ? Phone : Mail;
 
   return (
-    <div className="flex min-h-screen">
-      <div className={cn("hidden w-1/2 flex-col justify-between bg-gradient-to-br p-12 text-white lg:flex", accent.bg)}>
+    <div className="flex min-h-screen bg-cream">
+      <div className="hidden w-1/2 flex-col justify-between gradient-brand p-12 text-white lg:flex">
         <div>
-          <Link href="/" className="font-display text-2xl font-extrabold">{SCHOOL.shortName}</Link>
-          <h1 className="mt-16 font-display text-4xl font-bold leading-tight">{config.title}</h1>
+          <Link href="/" className="inline-flex items-center gap-3">
+            <BrandLogo size={72} className="h-16 w-16 border-2 border-gold/70" />
+            <span className="font-display text-xl font-semibold">{SCHOOL.shortName}</span>
+          </Link>
+          <div className="mt-4 h-0.5 w-24 bg-gold" />
+          <h1 className="mt-16 font-display text-4xl font-semibold leading-tight">{config.title}</h1>
           <p className="mt-4 max-w-md text-lg text-white/80">{config.description}</p>
         </div>
-        <Link href="/" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white">
+        <Link href="/" className="inline-flex min-h-11 items-center gap-2 text-sm text-gold hover:text-white">
           <ArrowLeft className="h-4 w-4" /> Back to school website
         </Link>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
-          <Link href="/" className="mb-6 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 lg:hidden">
-            <ArrowLeft className="h-4 w-4" /> Back to website
+          <Link href="/" className="mb-6 inline-flex min-h-11 items-center gap-2 text-sm text-muted hover:text-brand lg:hidden">
+            <BrandLogo size={36} className="h-9 w-9" />
+            Back to website
           </Link>
-          <h2 className="font-display text-2xl font-bold text-slate-900">{config.title}</h2>
-          <p className="mt-1 text-slate-500">
+          <span className={cn("inline-block rounded-full px-2.5 py-0.5 text-xs font-medium", accent.badge)}>
+            {config.title}
+          </span>
+          <h2 className="mt-3 font-display text-2xl font-semibold text-brand">{config.title}</h2>
+          <p className="mt-1 text-muted">
             {phoneLogin ? "Sign in with your phone number and password" : "Sign in with your email and password"}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
+              <label className="mb-1.5 block text-sm font-medium text-ink">
                 {phoneLogin ? "Phone number" : "Email"}
               </label>
               <div className="relative">
-                <IdentifierIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <IdentifierIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                 <input
                   type={phoneLogin ? "tel" : "email"}
                   inputMode={phoneLogin ? "tel" : "email"}
@@ -109,36 +118,36 @@ export function LoginForm({ portal }: LoginFormProps) {
                   onChange={(e) => setIdentifier(e.target.value)}
                   required
                   placeholder={phoneLogin ? "0801 234 5678" : "you@school.edu"}
-                  className={cn("w-full rounded-xl border border-slate-200 py-3 pl-10 pr-4 text-sm outline-none focus:ring-2", accent.ring)}
+                  className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-4 text-sm outline-none focus:ring-2 focus:ring-gold"
                 />
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
+              <label className="mb-1.5 block text-sm font-medium text-ink">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className={cn("w-full rounded-xl border border-slate-200 py-3 pl-10 pr-10 text-sm outline-none focus:ring-2", accent.ring)}
+                  className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm outline-none focus:ring-2 focus:ring-gold"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" aria-label={showPassword ? "Hide password" : "Show password"}>
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
-            {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
-            <button type="submit" disabled={loading || !ready} className={cn("flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white disabled:opacity-60", accent.btn)}>
+            {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+            <button type="submit" disabled={loading || !ready} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand py-3 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60">
               {loading || !ready ? "Signing in…" : "Sign in"} <ArrowRight className="h-4 w-4" />
             </button>
           </form>
 
           {demoAccounts.length > 0 && (
-            <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Demo accounts</p>
+            <div className="mt-8 rounded-2xl border border-border bg-white p-4">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">Demo accounts</p>
               {demoAccounts.map(([demoEmail, { password: demoPass, user: u }]) => {
                 const demoId = phoneLogin ? u.phone || demoEmail : demoEmail;
                 return (
@@ -149,19 +158,19 @@ export function LoginForm({ portal }: LoginFormProps) {
                       setIdentifier(demoId);
                       setPassword(demoPass);
                     }}
-                    className="flex w-full items-center justify-between rounded-lg bg-white px-3 py-2 text-left text-sm hover:bg-slate-100"
+                    className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm hover:bg-cream"
                   >
-                    <span className="font-medium">{u.firstName} {u.lastName}</span>
-                    <span className="text-xs text-slate-400">{demoId}</span>
+                    <span className="font-medium text-brand">{u.firstName} {u.lastName}</span>
+                    <span className="text-xs text-muted">{demoId}</span>
                   </button>
                 );
               })}
             </div>
           )}
 
-          <p className="mt-6 text-center text-sm text-slate-500">
+          <p className="mt-6 text-center text-sm text-muted">
             Wrong portal?{" "}
-            <Link href="/login/" className="font-medium text-blue-600 hover:underline">Back to School Portal</Link>
+            <Link href="/login/" className="font-medium text-brand hover:underline">Back to School Portal</Link>
           </p>
         </div>
       </div>

@@ -35,8 +35,8 @@ export default function AdminClassesPage() {
 
   if (!authReady || !schoolReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-sm text-slate-500">Loading portal…</p>
+      <div className="flex min-h-screen items-center justify-center bg-cream">
+        <p className="text-sm text-muted">Loading portal…</p>
       </div>
     );
   }
@@ -77,7 +77,7 @@ export default function AdminClassesPage() {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. JSS 3A"
+                placeholder="e.g. Primary 2"
                 className={fieldClass}
                 required
               />

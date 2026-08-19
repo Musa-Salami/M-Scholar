@@ -47,11 +47,11 @@ export const SEED_USERS: SchoolUser[] = [
 ];
 
 export const SEED_CLASSES: SchoolClass[] = [
-  { id: "c1", name: "JSS 1A", studentCount: 2, teacherId: "u4" },
-  { id: "c2", name: "JSS 1B", studentCount: 0, teacherId: "u4" },
-  { id: "c3", name: "JSS 2A", studentCount: 2, teacherId: "u3" },
-  { id: "c4", name: "SS 1 Science", studentCount: 1, teacherId: "u5" },
-  { id: "c5", name: "SS 2 Arts", studentCount: 0, teacherId: "u6" },
+  { id: "c1", name: "Kindergarten", studentCount: 0, teacherId: "u6" },
+  { id: "c2", name: "Nursery 1", studentCount: 0, teacherId: "u4" },
+  { id: "c3", name: "Nursery 2", studentCount: 2, teacherId: "u4" },
+  { id: "c4", name: "Primary 1", studentCount: 2, teacherId: "u3" },
+  { id: "c5", name: "Primary 3", studentCount: 1, teacherId: "u5" },
 ];
 
 export const SEED_SETTINGS: SchoolSettings = {
@@ -62,7 +62,7 @@ export const SEED_SETTINGS: SchoolSettings = {
   email: SCHOOL.email,
   session: "2026/2027",
   term: "First Term",
-  principalName: "The Principal",
+  principalName: "The Proprietor",
   nextTermResumptionDate: "2026-01-12",
   defaultStaffPassword: "Staff2026",
   defaultFamilyPassword: "Family2026",

@@ -17,11 +17,11 @@ export default function FeesPage() {
   const { feeStructures, invoices, addFeeStructure, generateInvoices, getStudent } = useFinanceStore();
   const classes = useSchoolStore((s) => s.classes);
   const settings = useSchoolStore((s) => s.settings);
-  const classNames = classes.length ? classes.map((c) => c.name) : ["JSS 1A", "JSS 2A", "SS 1 Science", "SS 2 Arts"];
+  const classNames = classes.length ? classes.map((c) => c.name) : ["Kindergarten", "Nursery 1", "Nursery 2", "Primary 1", "Primary 3"];
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     name: "",
-    className: classNames[0] ?? "JSS 2A",
+    className: classNames[0] ?? "Primary 1",
     term: settings.term,
     session: settings.session,
     items: [{ category: "Tuition" as FeeCategory, amount: 0 }],
@@ -38,7 +38,7 @@ export default function FeesPage() {
     setShowForm(false);
     setForm({
       name: "",
-      className: classNames[0] ?? "JSS 2A",
+      className: classNames[0] ?? "Primary 1",
       term: settings.term,
       session: settings.session,
       items: [{ category: "Tuition", amount: 0 }],
@@ -63,7 +63,7 @@ export default function FeesPage() {
             onClick={() => {
               setForm({
                 name: "",
-                className: classNames[0] ?? "JSS 2A",
+                className: classNames[0] ?? "Primary 1",
                 term: settings.term,
                 session: settings.session,
                 items: [{ category: "Tuition", amount: 0 }],
@@ -86,7 +86,7 @@ export default function FeesPage() {
           <h3 className="font-display font-semibold text-slate-900">New fee structure</h3>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <FormField label="Structure name">
-              <input className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="JSS 2A — First Term" />
+              <input className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="Primary 1 — First Term" />
             </FormField>
             <FormField label="Class">
               <select className={selectClass} value={form.className} onChange={(e) => setForm({ ...form, className: e.target.value })}>

@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   description:
     "Islamic and Western education in Ogaminana, Adavi LGA, Kogi State. Kindergarten to Primary. Call or WhatsApp 08035672451.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [{ url: "/brand/logo.png", type: "image/png" }],
+    apple: "/brand/logo.png",
+  },
   appleWebApp: { capable: true, title: "M-Scholars' Academy" },
 };
 

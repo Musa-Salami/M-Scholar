@@ -106,11 +106,13 @@ export const ATTENDANCE_LABELS: Record<AttendanceStatus, string> = {
 };
 
 export const SUBJECTS = [
-  "Mathematics",
   "English",
+  "Mathematics",
+  "Phonics",
+  "Islamic Studies",
+  "Qur'an",
   "Basic Science",
-  "Social Studies",
-  "Civic Education",
+  "Creative Arts",
 ] as const;
 
 export function computeGrade(total: number): string {

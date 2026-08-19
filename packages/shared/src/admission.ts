@@ -16,6 +16,10 @@ export function classLevelCode(className: string): SchoolLevelCode | null {
   const n = className.trim().toLowerCase();
   if (!n) return null;
   if (
+    n.startsWith("kindergarten") ||
+    n.startsWith("pre-nursery") ||
+    n.startsWith("prenursery") ||
+    n.startsWith("pre nursery") ||
     n.startsWith("nursery") ||
     n.startsWith("nur") ||
     n.startsWith("creche") ||
