@@ -20,6 +20,7 @@ import { useFinanceStore } from "@/lib/finance-store";
 import { useSchoolStore } from "@/lib/school-store";
 import { useAcademicStore } from "@/lib/academic-store";
 import { useCommsStore } from "@/lib/comms-store";
+import { ensureLoginsForEnrolment, removeStudentLogin, syncStudentLogin } from "@/lib/family-logins";
 
 const fieldClass =
   "w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500 disabled:bg-slate-50 disabled:text-slate-600";
@@ -72,6 +73,7 @@ export default function AdminStudentsPage() {
   const [mode, setMode] = useState<Mode>("closed");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [notice, setNotice] = useState("");
 
   const classOptions = classes.length
     ? classes.map((c) => c.name)
@@ -145,11 +147,21 @@ export default function AdminStudentsPage() {
       disability: form.disability.trim() || "None",
       allergy: form.allergy.trim() || "None",
     };
+    if (!payload.studentPhone) return;
     if (mode === "edit" && editingId) {
       const existing = students.find((s) => s.id === editingId);
-      updateStudent(editingId, { ...payload, studentEmail: existing?.studentEmail });
+      const next = { ...payload, studentEmail: existing?.studentEmail };
+      updateStudent(editingId, next);
+      syncStudentLogin({ id: editingId, ...next, studentEmail: existing?.studentEmail }, existing);
     } else {
       addStudent(payload);
+      const enrolled = useFinanceStore.getState().students.find((s) => s.admissionNo === payload.admissionNo);
+      if (enrolled) {
+        const logins = ensureLoginsForEnrolment(enrolled);
+        setNotice(
+          `Enrolled ${enrolled.name}. Student portal login: ${enrolled.studentPhone} · password ${logins.password}`
+        );
+      }
     }
     useSchoolStore.getState().syncClassCounts(useFinanceStore.getState().students);
     closePanel();
@@ -159,6 +171,7 @@ export default function AdminStudentsPage() {
     const ok = window.confirm(`Delete ${student.name} (${student.admissionNo})? Fee invoices and class records for this pupil will also be removed.`);
     if (!ok) return;
     deleteStudent(student.id);
+    removeStudentLogin(student);
     useAcademicStore.getState().removeStudentRecords(student.id);
     useCommsStore.getState().removeStudentRecords(student.id);
     useSchoolStore.getState().syncClassCounts(useFinanceStore.getState().students);
@@ -172,7 +185,7 @@ export default function AdminStudentsPage() {
     <PortalShell navItems={ADMIN_NAV} title="Super Admin Portal">
       <PageHeader
         title="Students"
-        description="Admission numbers are assigned automatically from class level, term, name initials, and year."
+        description="Admission numbers are assigned automatically from class level, term, name initials, and year. A student portal login is created only when you enroll the pupil."
         action={
           <button
             onClick={openEnroll}
@@ -182,6 +195,8 @@ export default function AdminStudentsPage() {
           </button>
         }
       />
+
+      {notice && <div className="mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
 
       {mode !== "closed" && (
         <form onSubmit={handleSubmit} className="card-shadow mb-6 rounded-2xl border border-slate-100 bg-white p-6">
@@ -252,7 +267,15 @@ export default function AdminStudentsPage() {
               <input type="tel" className={fieldClass} value={form.parentPhone} disabled={readOnly} onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} required />
             </FormField>
             <FormField label="Student phone (portal login)">
-              <input type="tel" className={fieldClass} value={form.studentPhone} disabled={readOnly} onChange={(e) => setForm({ ...form, studentPhone: e.target.value })} placeholder="Optional until a student login is created" />
+              <input
+                type="tel"
+                className={fieldClass}
+                value={form.studentPhone}
+                disabled={readOnly}
+                onChange={(e) => setForm({ ...form, studentPhone: e.target.value })}
+                required
+                placeholder="Required for the student portal login"
+              />
             </FormField>
             <FormField label="Parent address">
               <input className={fieldClass} value={form.parentAddress} disabled={readOnly} onChange={(e) => setForm({ ...form, parentAddress: e.target.value })} required />

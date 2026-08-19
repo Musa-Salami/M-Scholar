@@ -87,7 +87,7 @@ interface SchoolState {
   restore: () => void;
   resetToDemo: () => void;
   applyPersisted: (data: { users: SchoolUser[]; classes: SchoolClass[]; settings?: SchoolSettings }) => void;
-  addUser: (user: Omit<SchoolUser, "id" | "status">) => { ok: boolean; error?: string; user?: SchoolUser };
+  addUser: (user: Omit<SchoolUser, "id" | "status">, opts?: { fromEnrolment?: boolean }) => { ok: boolean; error?: string; user?: SchoolUser };
   updateUser: (id: string, patch: Partial<Omit<SchoolUser, "id">>) => { ok: boolean; error?: string };
   deleteUser: (id: string) => { ok: boolean; error?: string };
   addClass: (name: string, teacherId: string | null) => { ok: boolean; error?: string };
@@ -153,12 +153,15 @@ export const useSchoolStore = create<SchoolState>()((set, get) => ({
       restored: true,
     }),
 
-  addUser: (user) => {
+  addUser: (user, opts) => {
     const name = user.name.trim();
     const email = user.email.trim();
     const phone = user.phone.trim();
     const password = user.password.trim();
     if (!name) return { ok: false, error: "Enter a full name." };
+    if (user.role === "student" && !opts?.fromEnrolment) {
+      return { ok: false, error: "Enroll the pupil on Students first. A student login cannot be created without an enrolment record." };
+    }
     if (isFamilyRole(user.role) && !phone) return { ok: false, error: "Enter a phone number for parent/student login." };
     if (!isFamilyRole(user.role) && !email) return { ok: false, error: "Enter an email for staff login." };
     if (password.length < 6) return { ok: false, error: "Password must be at least 6 characters." };
@@ -184,6 +187,9 @@ export const useSchoolStore = create<SchoolState>()((set, get) => ({
     const current = get().users.find((u) => u.id === id);
     if (!current) return { ok: false, error: "User not found." };
     const next = normalizeUser({ ...current, ...patch, id });
+    if (next.role === "student" && current.role !== "student") {
+      return { ok: false, error: "Enroll the pupil on Students first. You cannot turn another account into a student login." };
+    }
     if (patch.password !== undefined && next.password.trim().length < 6) {
       return { ok: false, error: "Password must be at least 6 characters." };
     }

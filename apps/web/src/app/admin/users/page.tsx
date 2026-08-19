@@ -179,6 +179,10 @@ export default function AdminUsersPage() {
       setEditingId(null);
       return;
     }
+    if (!editingId && form.role === "student") {
+      setFormError("Enroll the pupil on Students first. A student login cannot be created here.");
+      return;
+    }
     const result = addUser({
       name: form.name,
       email: form.email,
@@ -246,7 +250,7 @@ export default function AdminUsersPage() {
     <PortalShell navItems={ADMIN_NAV} title="Super Admin Portal">
       <PageHeader
         title="User Management"
-        description="Set login details when you create a profile, then share them with the user. Staff use email. Parents and students use phone number. Each enrolled pupil has a parent login and a student login."
+        description="Set login details when you create a profile, then share them with the user. Staff use email. Parents use phone number. Student logins are created only when you enroll a pupil on Students."
         action={
           <button
             onClick={openForm}
@@ -294,7 +298,7 @@ export default function AdminUsersPage() {
           <h3 className="font-display font-semibold text-slate-900">{editingId ? "Edit user profile" : "New user profile"}</h3>
           <p className="mt-1 text-sm text-slate-500">
             {familyForm
-              ? "Parent and student accounts sign in with phone number and password."
+              ? "Parents sign in with phone number and password. Student logins are created from enrolment, not from this form."
               : "Teachers and school officers sign in with email and password. Add date of birth, address, phone number, and next of kin."}
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -308,14 +312,17 @@ export default function AdminUsersPage() {
             <select
               value={form.role}
               onChange={(e) => handleRoleChange(e.target.value as UserRole)}
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+              disabled={Boolean(editingId && form.role === "student")}
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500 disabled:bg-slate-50"
             >
               <optgroup label="Teachers">
                 <option value="class_teacher">{ROLE_LABELS.class_teacher}</option>
               </optgroup>
-              <optgroup label="Parent / Student">
+              <optgroup label="Family">
                 <option value="parent">{ROLE_LABELS.parent}</option>
-                <option value="student">{ROLE_LABELS.student}</option>
+                {editingId && form.role === "student" ? (
+                  <option value="student">{ROLE_LABELS.student}</option>
+                ) : null}
               </optgroup>
               <optgroup label="Staff">
                 <option value="super_admin">{ROLE_LABELS.super_admin}</option>
