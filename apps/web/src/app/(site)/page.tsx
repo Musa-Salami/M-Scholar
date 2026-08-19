@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, BookOpen, Heart, Shield } from "lucide-react";
 import { SCHOOL } from "@m-scholar/shared";
-import { BrandLogo } from "@/components/brand-logo";
 import { pageHref, whatsappHref } from "@/lib/paths";
 
 export default function HomePage() {
@@ -19,10 +18,6 @@ export default function HomePage() {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-brand/95 via-brand/80 to-brand/55 sm:bg-gradient-to-r sm:from-brand/95 sm:via-brand/80 sm:to-brand/45" />
         <div className="relative mx-auto flex min-h-[62svh] max-w-6xl flex-col justify-center px-4 py-16 sm:min-h-[72svh] sm:py-20 md:px-6 lg:min-h-[78svh]">
-          <BrandLogo
-            size={176}
-            className="mb-6 h-24 w-24 border-4 border-gold/80 shadow-xl sm:h-32 sm:w-32 md:mb-8 md:h-44 md:w-44"
-          />
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold sm:text-sm sm:tracking-[0.22em]">
             You are highly welcome
           </p>
