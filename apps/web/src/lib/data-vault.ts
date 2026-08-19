@@ -176,6 +176,19 @@ export function vaultHasRealData(): boolean {
   return loadVault() !== null;
 }
 
+export function parseImportedVault(text: string): AppSnapshot | null {
+  try {
+    const parsed = JSON.parse(text) as unknown;
+    if (!parsed || typeof parsed !== "object") return null;
+    const envelope = parsed as VaultEnvelope;
+    if (envelope.payload && isSnapshot(envelope.payload)) return envelope.payload;
+    if (isSnapshot(parsed)) return parsed;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function exportVaultFile(snapshot?: AppSnapshot) {
   const payload = snapshot ?? loadVault()?.snapshot ?? {};
   const blob = new Blob([JSON.stringify(payload, null, 2)], {

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { Activity, Database, Download, GraduationCap, Shield, UserCheck, Users } from "lucide-react";
+import { Activity, Database, Download, GraduationCap, Shield, Upload, UserCheck, Users } from "lucide-react";
 import { ADMIN_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader, StatCard } from "@/components/dashboard-ui";
@@ -37,7 +37,9 @@ export default function AdminDashboardPage() {
   const loadDemo = useDataModeStore((s) => s.loadDemo);
   const loadReal = useDataModeStore((s) => s.loadReal);
   const downloadBackup = useDataModeStore((s) => s.downloadBackup);
+  const restoreBackup = useDataModeStore((s) => s.restoreBackup);
   const [notice, setNotice] = useState("");
+  const restoreInputRef = useRef<HTMLInputElement>(null);
 
   if (!ready) {
     return (
@@ -77,8 +79,27 @@ export default function AdminDashboardPage() {
     const entered = loadReal();
     setNotice(
       entered
-        ? "Showing only records you entered. Sample students and staff are hidden."
-        : "No entered records yet. Students, staff, and classes stay at 0 until you add them."
+        ? "Showing only records you entered on this device. Sample students and staff are hidden."
+        : "This phone or computer has no school records yet. Students, staff, and classes stay at 0 until you add them here or restore a backup from the device where you entered them."
+    );
+  };
+
+  const handleRestoreFile = async (file: File | undefined) => {
+    if (!file) return;
+    if (hasRealVault) {
+      const ok = window.confirm("Replace the records on this device with the backup file?");
+      if (!ok) return;
+    }
+    const text = await file.text();
+    const result = restoreBackup(text);
+    if (!result.ok) {
+      setNotice(result.error ?? "Could not restore this backup.");
+      return;
+    }
+    setNotice(
+      result.entered
+        ? "Restored school records onto this device. Students, staff, and classes now come from the backup."
+        : result.error ?? "Backup restored."
     );
   };
 
@@ -194,7 +215,10 @@ export default function AdminDashboardPage() {
                 <mark className="rounded bg-amber-300 px-1.5 py-0.5 font-bold text-amber-950">DEMO data</mark>
               )}
               {" · "}Last real save: {formatSavedAt(savedAt)}
-              {hasRealVault ? " · Entered records saved on this device" : " · No entered records saved yet"}
+              {hasRealVault ? " · Entered records saved on this device" : " · No entered records saved on this device"}
+            </p>
+            <p className="mt-2 text-sm text-slate-600">
+              Real records are stored in this browser, not shared automatically with your phone. To copy them, download a backup here, send the file to the other device, then restore it there.
             </p>
             {mode === "demo" && (
               <p className="mt-2 text-sm font-medium text-amber-900">
@@ -203,7 +227,7 @@ export default function AdminDashboardPage() {
             )}
             {mode === "real" && !hasRealVault && (
               <p className="mt-2 text-sm text-slate-600">
-                Real data is empty until you enroll students, add staff, or create classes.
+                This device is empty. If you already enrolled students on a computer, download a backup on that computer and restore it here. Creating records on the phone will not show the computer&apos;s list, and the other way around.
               </p>
             )}
             {!vaultHealthy && (
@@ -250,12 +274,30 @@ export default function AdminDashboardPage() {
             type="button"
             onClick={() => {
               downloadBackup();
-              setNotice("Backup file downloaded.");
+              setNotice("Backup file downloaded. Send it to your phone, then restore it there.");
             }}
             disabled={!hasRealVault}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Download className="h-4 w-4" /> Download backup (JSON)
+          </button>
+          <input
+            ref={restoreInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              void handleRestoreFile(file);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => restoreInputRef.current?.click()}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <Upload className="h-4 w-4" /> Restore backup
           </button>
         </div>
       </div>

@@ -28,6 +28,7 @@ import {
   VAULT_KEYS,
   VAULT_VERSION,
   exportVaultFile,
+  parseImportedVault,
   getDataMode,
   loadVault,
   loadVaultAsync,
@@ -56,6 +57,7 @@ interface DataModeState {
   loadDemo: () => void;
   loadReal: () => boolean;
   downloadBackup: () => void;
+  restoreBackup: (text: string) => { ok: boolean; error?: string; entered: boolean };
 }
 
 let hydrating = false;
@@ -536,6 +538,39 @@ function loadRealInMemory(): boolean {
   return entered;
 }
 
+function restoreBackupFromText(text: string): { ok: boolean; error?: string; entered: boolean } {
+  const snapshot = parseImportedVault(text);
+  if (!snapshot) {
+    return { ok: false, error: "This file is not an M-Scholar backup.", entered: false };
+  }
+  if (persistTimer) {
+    window.clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+  const real = stripDemoSeeds(snapshot);
+  hydrating = true;
+  applySnapshot(real);
+  setDataMode("real");
+  lastPersisted = "";
+  useSchoolStore.getState().restore();
+  hydrating = false;
+  persistNow();
+  const entered = hasEnteredRecords(real);
+  useDataModeStore.setState({
+    mode: "real",
+    savedAt: useDataModeStore.getState().savedAt,
+    vaultHealthy: true,
+    hasRealVault: entered,
+  });
+  return {
+    ok: true,
+    entered,
+    error: entered
+      ? undefined
+      : "Backup loaded, but it has no students, staff, or classes yet.",
+  };
+}
+
 export const useDataModeStore = create<DataModeState>()(() => ({
   mode: "demo",
   savedAt: null,
@@ -548,6 +583,7 @@ export const useDataModeStore = create<DataModeState>()(() => ({
     if (!loaded) return;
     exportVaultFile(stripDemoSeeds(loaded.snapshot));
   },
+  restoreBackup: (text) => restoreBackupFromText(text),
 }));
 
 async function boot() {
