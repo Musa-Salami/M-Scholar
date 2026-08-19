@@ -73,6 +73,24 @@
     box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.55);
   }
 
+  @media (hover: hover) {
+    a.rounded-lg:hover:not(:active):not(.is-pressed),
+    a.rounded-xl:hover:not(:active):not(.is-pressed),
+    a.rounded-2xl:hover:not(:active):not(.is-pressed),
+    button:hover:not(:disabled):not(:active):not(.is-pressed),
+    [role="button"]:hover:not(:active):not(.is-pressed),
+    input[type="submit"]:hover:not(:disabled):not(:active):not(.is-pressed),
+    input[type="button"]:hover:not(:disabled):not(:active):not(.is-pressed),
+    summary:hover:not(:active):not(.is-pressed) {
+      transform: translateY(-2px);
+      border-color: #c9a227;
+      box-shadow:
+        0 1px 3px rgba(26, 20, 100, 0.08),
+        0 12px 28px rgba(26, 20, 100, 0.12),
+        0 0 0 2px #c9a227;
+    }
+  }
+
   button:disabled,
   input:disabled {
     cursor: not-allowed;

@@ -24,7 +24,7 @@ export default function StaffLoginPage() {
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           <Link
             href={pageHref(LOGIN_PORTALS.admin.href)}
-            className="card-shadow rounded-2xl border-2 border-border bg-white p-8 transition hover:-translate-y-0.5 hover:border-gold"
+            className="card-shadow rounded-2xl border-2 border-transparent bg-white p-8"
           >
             <ShieldCheck className="h-10 w-10 text-brand" />
             <h2 className="mt-4 font-display text-xl font-semibold text-brand">{LOGIN_PORTALS.admin.title}</h2>
@@ -32,7 +32,7 @@ export default function StaffLoginPage() {
           </Link>
           <Link
             href={pageHref(LOGIN_PORTALS.finance.href)}
-            className="card-shadow rounded-2xl border-2 border-border bg-white p-8 transition hover:-translate-y-0.5 hover:border-gold"
+            className="card-shadow rounded-2xl border-2 border-transparent bg-white p-8"
           >
             <Wallet className="h-10 w-10 text-brand" />
             <h2 className="mt-4 font-display text-xl font-semibold text-brand">{LOGIN_PORTALS.finance.title}</h2>

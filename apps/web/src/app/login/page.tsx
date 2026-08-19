@@ -34,7 +34,7 @@ export default function LoginChooserPage() {
               <Link
                 key={key}
                 href={pageHref(portal.href)}
-                className="card-shadow rounded-2xl border-2 border-border bg-white p-8 transition hover:-translate-y-0.5 hover:border-gold"
+                className="card-shadow rounded-2xl border-2 border-transparent bg-white p-8"
               >
                 <Icon className="h-10 w-10 text-brand" />
                 <h2 className="mt-4 font-display text-xl font-semibold text-brand">{portal.title}</h2>
