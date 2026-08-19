@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Source_Sans_3 } from "next/font/google";
 import { PressHighlight } from "@/components/press-highlight";
+import { SessionRestore } from "@/components/session-restore";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -43,6 +44,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${sourceSans.variable} ${fraunces.variable} antialiased`}>
         <PressHighlight />
+        <SessionRestore />
         {children}
       </body>
     </html>

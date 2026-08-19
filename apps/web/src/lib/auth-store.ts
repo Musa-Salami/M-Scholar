@@ -123,6 +123,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   dashboardPath: () => {
     const user = get().user;
     if (!user) return "/login/";
-    return ROLE_DASHBOARD_PATH[user.role];
+    return ROLE_DASHBOARD_PATH[user.role].endsWith("/")
+      ? ROLE_DASHBOARD_PATH[user.role]
+      : `${ROLE_DASHBOARD_PATH[user.role]}/`;
   },
 }));

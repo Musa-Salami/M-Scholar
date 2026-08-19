@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Activity, Database, Download, GraduationCap, Shield, UserCheck, Users } from "lucide-react";
 import { ADMIN_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
@@ -160,13 +161,13 @@ export default function AdminDashboardPage() {
               { label: "Manage classes", href: "/admin/classes" },
               { label: "School settings", href: "/admin/settings" },
             ].map(({ label, href }) => (
-              <a
+              <Link
                 key={label}
                 href={pageHref(href)}
                 className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 hover:border-violet-200 hover:bg-violet-50"
               >
                 {label}
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -196,7 +197,7 @@ export default function AdminDashboardPage() {
             </p>
             {mode === "demo" && (
               <p className="mt-2 text-sm font-medium text-amber-900">
-                Sample students and staff stay in demo only. Anything you create is stored as real data and will not keep these sample counts.
+                Demo stays on screen until you choose Load real data. Editing the sample does not turn it into your school records.
               </p>
             )}
             {mode === "real" && !hasRealVault && (

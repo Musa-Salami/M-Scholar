@@ -1,6 +1,7 @@
 "use client";
 
 import { Award, BookOpen, Calendar, ClipboardList, MessageSquare, Receipt, StickyNote } from "lucide-react";
+import Link from "next/link";
 import { PORTAL_NAV, type NotePriority } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader, StatCard } from "@/components/dashboard-ui";
@@ -198,9 +199,9 @@ export default function PortalDashboardPage() {
               <h3 className="font-display font-semibold text-slate-900">Teacher note</h3>
             </div>
             {latestNote && (
-              <a href={pageHref("/portal/notes")} className="text-xs font-semibold text-sky-700 hover:underline">
+              <Link href={pageHref("/portal/notes")} className="text-xs font-semibold text-sky-700 hover:underline">
                 All notes
-              </a>
+              </Link>
             )}
           </div>
           {!latestNote ? (
@@ -232,14 +233,14 @@ export default function PortalDashboardPage() {
           { label: "Teacher notes", href: "/portal/notes", icon: BookOpen },
           { label: "Messages", href: "/portal/messages", icon: MessageSquare },
         ].map(({ label, href, icon: Icon }) => (
-          <a
+          <Link
             key={href}
             href={pageHref(href)}
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-sky-200 hover:bg-sky-50"
           >
             <Icon className="h-4 w-4 text-sky-600" />
             {label}
-          </a>
+          </Link>
         ))}
       </div>
     </PortalShell>

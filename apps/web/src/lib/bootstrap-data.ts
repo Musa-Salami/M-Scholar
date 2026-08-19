@@ -337,18 +337,12 @@ function resetAllToDemo() {
 
 function persistNow() {
   if (hydrating || typeof window === "undefined") return;
+  // Demo is an in-memory sample. Never write it over the real vault or flip the mode.
+  if (getDataMode() === "demo") return;
 
   const live = collectSnapshot();
   const snapshot = stripDemoSeeds(live);
   const encoded = JSON.stringify(snapshot);
-
-  if (getDataMode() === "demo") {
-    if (!hasEnteredRecords(snapshot)) return;
-    hydrating = true;
-    applySnapshot(snapshot);
-    hydrating = false;
-    setDataMode("real");
-  }
 
   if (encoded === lastPersisted) return;
 
@@ -364,6 +358,7 @@ function persistNow() {
 
 function schedulePersist() {
   if (hydrating) return;
+  if (getDataMode() === "demo") return;
   if (persistTimer) window.clearTimeout(persistTimer);
   persistTimer = window.setTimeout(() => {
     persistTimer = null;

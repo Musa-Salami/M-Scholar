@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Receipt, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { FINANCE_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
@@ -53,13 +54,13 @@ export default function FinanceDashboardPage() {
           { label: "Payroll", href: "/finance/payroll" },
           { label: "Reports", href: "/finance/reports" },
         ].map(({ label, href }) => (
-          <a
+          <Link
             key={href}
             href={pageHref(href)}
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-emerald-200 hover:bg-emerald-50"
           >
             {label}
-          </a>
+          </Link>
         ))}
       </div>
 
@@ -73,9 +74,9 @@ export default function FinanceDashboardPage() {
                 <div key={pay.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
                   <div>
                     <p className="text-sm font-medium text-slate-900">{student?.name}</p>
-                    <a href={pageHref("/finance/payments")} className="text-xs text-emerald-700 hover:underline">
+                    <Link href={pageHref("/finance/payments")} className="text-xs text-emerald-700 hover:underline">
                       {pay.receiptNo}
-                    </a>
+                    </Link>
                   </div>
                   <span className="font-semibold text-emerald-700">{formatCurrency(pay.amount)}</span>
                 </div>

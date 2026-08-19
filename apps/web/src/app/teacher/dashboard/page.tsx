@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ClipboardCheck, BookOpen, StickyNote, MessageSquare } from "lucide-react";
 import { TEACHER_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
@@ -51,13 +52,13 @@ export default function TeacherDashboardPage() {
           { label: "Post assignment", href: "/teacher/assignments" },
           { label: "Write notes", href: "/teacher/notes" },
         ].map(({ label, href }) => (
-          <a
+          <Link
             key={href}
             href={pageHref(href)}
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 hover:border-amber-200 hover:bg-amber-50"
           >
             {label}
-          </a>
+          </Link>
         ))}
       </div>
     </PortalShell>

@@ -136,7 +136,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
             const Icon = ICONS[item.icon] ?? LayoutDashboard;
             const active = current === item.href.replace(/\/$/, "");
             return (
-              <a
+              <Link
                 key={item.href}
                 href={pageHref(item.href)}
                 className={cn(
@@ -146,7 +146,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
               >
                 <Icon className="h-4 w-4 shrink-0" />
                 {item.label}
-              </a>
+              </Link>
             );
           })}
         </nav>
@@ -219,7 +219,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
                   const Icon = ICONS[item.icon] ?? LayoutDashboard;
                   const active = current === item.href.replace(/\/$/, "");
                   return (
-                    <a
+                    <Link
                       key={item.href}
                       href={pageHref(item.href)}
                       onClick={() => setMobileOpen(false)}
@@ -230,7 +230,7 @@ export function PortalShell({ navItems, children, title }: PortalShellProps) {
                     >
                       <Icon className="h-4 w-4" />
                       {item.label}
-                    </a>
+                    </Link>
                   );
                 })}
                 <Link href="/" className="mt-3 flex min-h-11 items-center rounded-xl px-3 py-2 text-sm font-medium text-muted hover:bg-cream">

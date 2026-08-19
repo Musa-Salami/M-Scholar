@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Bell } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
@@ -51,7 +52,7 @@ export function NotificationBell() {
                 <p className="p-4 text-sm text-muted">No notifications yet.</p>
               ) : (
                 items.map((n) => (
-                  <a
+                  <Link
                     key={n.id}
                     href={pageHref(n.href)}
                     onClick={() => {
@@ -62,7 +63,7 @@ export function NotificationBell() {
                   >
                     <p className="text-sm font-medium text-brand">{n.title}</p>
                     <p className="text-xs text-muted line-clamp-2">{n.body}</p>
-                  </a>
+                  </Link>
                 ))
               )}
             </div>

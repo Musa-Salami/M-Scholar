@@ -9,10 +9,12 @@ import { useAuthStore } from "@/lib/auth-store";
 import { BrandLogo } from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
 import { pageHref } from "@/lib/paths";
+import { useAuthReady } from "@/hooks/use-auth-ready";
 
 export function SiteHeader() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const ready = useAuthReady();
   const { isAuthenticated, user, dashboardPath, logout } = useAuthStore();
   const portalHref = pageHref(dashboardPath());
 
@@ -46,14 +48,16 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {isAuthenticated && user ? (
+          {!ready ? (
+            <span className="inline-flex min-h-11 items-center px-3 text-sm text-muted sm:px-4">Portal</span>
+          ) : isAuthenticated && user ? (
             <div className="flex items-center gap-2">
-              <a
+              <Link
                 href={portalHref}
                 className="inline-flex min-h-11 items-center rounded-xl bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-dark sm:px-4"
               >
                 My Portal
-              </a>
+              </Link>
               <button
                 type="button"
                 onClick={() => {
@@ -99,11 +103,13 @@ export function SiteHeader() {
                 </Link>
               ))}
               <div className="my-3 border-t" />
-              {isAuthenticated && user ? (
+              {!ready ? (
+                <span className="px-3 py-3 text-sm text-muted">Portal</span>
+              ) : isAuthenticated && user ? (
                 <>
-                  <a href={portalHref} className="rounded-lg px-3 py-3 text-sm font-medium text-brand" onClick={() => setMobileOpen(false)}>
+                  <Link href={portalHref} className="rounded-lg px-3 py-3 text-sm font-medium text-brand" onClick={() => setMobileOpen(false)}>
                     My Portal
-                  </a>
+                  </Link>
                   <button
                     type="button"
                     className="rounded-lg px-3 py-3 text-left text-sm font-medium text-ink"
