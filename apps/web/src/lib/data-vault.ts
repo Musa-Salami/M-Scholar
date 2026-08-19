@@ -143,8 +143,11 @@ export function loadVault(): { snapshot: AppSnapshot; savedAt: string } | null {
   return null;
 }
 
-export function saveVault(snapshot: AppSnapshot): { ok: boolean; savedAt: string } {
-  const savedAt = new Date().toISOString();
+export function isAppSnapshot(value: unknown): value is AppSnapshot {
+  return isSnapshot(value);
+}
+
+export function saveVault(snapshot: AppSnapshot, savedAt = new Date().toISOString()): { ok: boolean; savedAt: string } {
   const payload: AppSnapshot = { ...snapshot, version: VAULT_VERSION };
   const encodedPayload = JSON.stringify(payload);
   const envelope: VaultEnvelope = {

@@ -37,6 +37,13 @@ import {
   setDataMode,
 } from "@/lib/data-vault";
 import {
+  cloudStatusFromNetwork,
+  listenCloudVault,
+  pullCloudVault,
+  pushCloudVault,
+  type CloudVault,
+} from "@/lib/cloud-vault";
+import {
   SEED_SETTINGS,
   useSchoolStore,
   type SchoolClass,
@@ -54,8 +61,9 @@ interface DataModeState {
   savedAt: string | null;
   vaultHealthy: boolean;
   hasRealVault: boolean;
+  cloudStatus: "offline" | "connecting" | "synced" | "error";
   loadDemo: () => void;
-  loadReal: () => boolean;
+  loadReal: () => Promise<boolean>;
   downloadBackup: () => void;
   restoreBackup: (text: string) => { ok: boolean; error?: string; entered: boolean };
 }
@@ -65,6 +73,8 @@ let lastPersisted = "";
 let persistTimer: number | null = null;
 let listenersBound = false;
 let bootPromise: Promise<void> | null = null;
+let cloudUnsub: (() => void) | null = null;
+let applyingCloud = false;
 
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
@@ -240,6 +250,130 @@ function hasEnteredRecords(snapshot: AppSnapshot): boolean {
   );
 }
 
+type ResolvedVault = {
+  snapshot: AppSnapshot;
+  savedAt: string;
+  source: "local" | "cloud";
+};
+
+function asStoredVault(loaded: { snapshot: AppSnapshot; savedAt: string } | null) {
+  if (!loaded) return null;
+  return { snapshot: stripDemoSeeds(loaded.snapshot), savedAt: loaded.savedAt };
+}
+
+function pickPreferredVault(
+  local: { snapshot: AppSnapshot; savedAt: string } | null,
+  cloud: CloudVault | null
+): ResolvedVault | null {
+  const localSnap = local ? stripDemoSeeds(local.snapshot) : null;
+  const cloudSnap = cloud ? stripDemoSeeds(cloud.snapshot) : null;
+  const localHas = Boolean(localSnap && hasEnteredRecords(localSnap));
+  const cloudHas = Boolean(cloudSnap && hasEnteredRecords(cloudSnap));
+  if (cloudHas && !localHas) return { snapshot: cloudSnap!, savedAt: cloud!.savedAt, source: "cloud" };
+  if (localHas && !cloudHas) return { snapshot: localSnap!, savedAt: local!.savedAt, source: "local" };
+  if (localHas && cloudHas && localSnap && cloudSnap) {
+    if ((cloud!.savedAt || "") > (local!.savedAt || "")) {
+      return { snapshot: cloudSnap, savedAt: cloud!.savedAt, source: "cloud" };
+    }
+    return { snapshot: localSnap, savedAt: local!.savedAt, source: "local" };
+  }
+  return null;
+}
+
+function applyRealVault(snapshot: AppSnapshot, savedAt: string, persistLocal: boolean) {
+  hydrating = true;
+  applyingCloud = true;
+  applySnapshot(snapshot);
+  if (persistLocal) saveVault(snapshot, savedAt);
+  lastPersisted = JSON.stringify(snapshot);
+  setDataMode("real");
+  useSchoolStore.getState().restore();
+  hydrating = false;
+  applyingCloud = false;
+  useDataModeStore.setState({
+    mode: "real",
+    savedAt,
+    vaultHealthy: true,
+    hasRealVault: hasEnteredRecords(snapshot),
+  });
+}
+
+async function publishVault(snapshot: AppSnapshot, savedAt: string) {
+  if (!hasEnteredRecords(snapshot)) return false;
+  const ok = await pushCloudVault(snapshot, savedAt);
+  useDataModeStore.setState({ cloudStatus: cloudStatusFromNetwork(ok) });
+  return ok;
+}
+
+function handleIncomingCloud(cloud: CloudVault | null) {
+  if (!cloud || applyingCloud || hydrating) return;
+  const snapshot = stripDemoSeeds(cloud.snapshot);
+  if (!hasEnteredRecords(snapshot)) return;
+  if (JSON.stringify(snapshot) === lastPersisted) return;
+
+  const local = asStoredVault(loadVault());
+  const localHas = Boolean(local && hasEnteredRecords(local.snapshot));
+  const mode = getDataMode();
+
+  if (mode === "demo" && localHas) {
+    if ((cloud.savedAt || "") > (local?.savedAt || "")) saveVault(snapshot, cloud.savedAt);
+    useDataModeStore.setState({
+      hasRealVault: true,
+      savedAt: cloud.savedAt,
+      cloudStatus: "synced",
+    });
+    return;
+  }
+
+  if (mode === "real" || !localHas) {
+    applyRealVault(snapshot, cloud.savedAt, true);
+    useDataModeStore.setState({ cloudStatus: "synced" });
+  }
+}
+
+async function reconcileWithCloud() {
+  if (typeof window === "undefined") return;
+  useDataModeStore.setState({
+    cloudStatus: navigator.onLine ? "connecting" : "offline",
+  });
+  const cloud = await pullCloudVault();
+  const local = asStoredVault(loadVault());
+  const picked = pickPreferredVault(local, cloud);
+  const mode = getDataMode();
+  const localHas = Boolean(local && hasEnteredRecords(local.snapshot));
+
+  if (!picked) {
+    useDataModeStore.setState({
+      cloudStatus: navigator.onLine ? "synced" : "offline",
+      hasRealVault: localHas,
+    });
+    return;
+  }
+
+  if (picked.source === "local") {
+    await publishVault(picked.snapshot, picked.savedAt);
+  }
+
+  if (mode === "demo" && localHas) {
+    if (picked.source === "cloud") saveVault(picked.snapshot, picked.savedAt);
+    useDataModeStore.setState({
+      hasRealVault: true,
+      savedAt: picked.savedAt,
+      cloudStatus: cloud || picked.source === "local" ? "synced" : cloudStatusFromNetwork(false),
+    });
+    return;
+  }
+
+  applyRealVault(picked.snapshot, picked.savedAt, true);
+  if (picked.source === "local") await publishVault(picked.snapshot, picked.savedAt);
+  else useDataModeStore.setState({ cloudStatus: "synced" });
+}
+
+function startCloudListener() {
+  if (cloudUnsub || typeof window === "undefined") return;
+  cloudUnsub = listenCloudVault(handleIncomingCloud);
+}
+
 function containsDemoSeeds(snapshot: AppSnapshot): boolean {
   const checks: Array<[unknown, Set<string>]> = [
     [snapshot.school.users, DEMO_IDS.users],
@@ -394,6 +528,9 @@ function persistNow() {
     vaultHealthy: result.ok,
     hasRealVault: hasEnteredRecords(snapshot),
   });
+  if (hasEnteredRecords(snapshot)) {
+    void publishVault(snapshot, result.savedAt);
+  }
 }
 
 function schedulePersist() {
@@ -424,6 +561,13 @@ function bindListeners() {
   window.addEventListener("beforeunload", persistNow);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") persistNow();
+    if (document.visibilityState === "visible") void reconcileWithCloud();
+  });
+  window.addEventListener("online", () => {
+    void reconcileWithCloud();
+  });
+  window.addEventListener("offline", () => {
+    useDataModeStore.setState({ cloudStatus: "offline" });
   });
 
   window.addEventListener("storage", (event) => {
@@ -506,6 +650,30 @@ function loadDemoInMemory() {
   });
 }
 
+async function loadRealEverywhere(): Promise<boolean> {
+  if (persistTimer) {
+    window.clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+  useDataModeStore.setState({
+    cloudStatus: typeof navigator !== "undefined" && navigator.onLine ? "connecting" : "offline",
+  });
+  const local = asStoredVault(loadVault());
+  const cloud = await pullCloudVault();
+  const picked = pickPreferredVault(local, cloud);
+  if (!picked) {
+    const entered = loadRealInMemory();
+    useDataModeStore.setState({
+      cloudStatus: typeof navigator !== "undefined" && navigator.onLine ? "synced" : "offline",
+    });
+    return entered;
+  }
+  applyRealVault(picked.snapshot, picked.savedAt, true);
+  if (picked.source === "local") await publishVault(picked.snapshot, picked.savedAt);
+  else useDataModeStore.setState({ cloudStatus: "synced" });
+  return true;
+}
+
 function loadRealInMemory(): boolean {
   if (persistTimer) {
     window.clearTimeout(persistTimer);
@@ -576,8 +744,9 @@ export const useDataModeStore = create<DataModeState>()(() => ({
   savedAt: null,
   vaultHealthy: true,
   hasRealVault: false,
+  cloudStatus: "offline",
   loadDemo: () => loadDemoInMemory(),
-  loadReal: () => loadRealInMemory(),
+  loadReal: () => loadRealEverywhere(),
   downloadBackup: () => {
     const loaded = loadVault();
     if (!loaded) return;
@@ -590,7 +759,11 @@ async function boot() {
   if (typeof window === "undefined") return;
   bindListeners();
 
-  if (migrateLegacyIfNeeded()) return;
+  if (migrateLegacyIfNeeded()) {
+    startCloudListener();
+    await reconcileWithCloud();
+    return;
+  }
 
   const loaded = (await loadVaultAsync()) ?? loadVault();
   const mode = getDataMode();
@@ -613,17 +786,20 @@ async function boot() {
       savedAt: vault.savedAt,
       vaultHealthy: true,
       hasRealVault: hasEnteredRecords(vault.snapshot),
+      cloudStatus: navigator.onLine ? "connecting" : "offline",
     });
-    return;
+  } else {
+    loadDemoInMemory();
+    if (vault) {
+      useDataModeStore.setState({
+        hasRealVault: hasEnteredRecords(vault.snapshot),
+        savedAt: vault.savedAt,
+      });
+    }
   }
 
-  loadDemoInMemory();
-  if (vault) {
-    useDataModeStore.setState({
-      hasRealVault: hasEnteredRecords(vault.snapshot),
-      savedAt: vault.savedAt,
-    });
-  }
+  startCloudListener();
+  await reconcileWithCloud();
 }
 
 export function bootstrapAppData(): Promise<void> {

@@ -34,6 +34,7 @@ export default function AdminDashboardPage() {
   const savedAt = useDataModeStore((s) => s.savedAt);
   const vaultHealthy = useDataModeStore((s) => s.vaultHealthy);
   const hasRealVault = useDataModeStore((s) => s.hasRealVault);
+  const cloudStatus = useDataModeStore((s) => s.cloudStatus);
   const loadDemo = useDataModeStore((s) => s.loadDemo);
   const loadReal = useDataModeStore((s) => s.loadReal);
   const downloadBackup = useDataModeStore((s) => s.downloadBackup);
@@ -75,12 +76,13 @@ export default function AdminDashboardPage() {
     setNotice("Showing highlighted demo sample. These figures are not your school records.");
   };
 
-  const handleLoadReal = () => {
-    const entered = loadReal();
+  const handleLoadReal = async () => {
+    setNotice("Loading school records from this device and the cloud…");
+    const entered = await loadReal();
     setNotice(
       entered
-        ? "Showing only records you entered on this device. Sample students and staff are hidden."
-        : "This phone or computer has no school records yet. Students, staff, and classes stay at 0 until you add them here or restore a backup from the device where you entered them."
+        ? "Showing real school records. Changes save to this device and sync to other devices when online."
+        : "No school records in the cloud or on this device yet. Enroll students, add staff, or create classes — they will sync to other devices when online."
     );
   };
 
@@ -215,10 +217,18 @@ export default function AdminDashboardPage() {
                 <mark className="rounded bg-amber-300 px-1.5 py-0.5 font-bold text-amber-950">DEMO data</mark>
               )}
               {" · "}Last real save: {formatSavedAt(savedAt)}
-              {hasRealVault ? " · Entered records saved on this device" : " · No entered records saved on this device"}
+              {hasRealVault ? " · School records on this device" : " · No school records on this device yet"}
+              {" · "}
+              {cloudStatus === "synced"
+                ? "Cloud sync on"
+                : cloudStatus === "connecting"
+                  ? "Syncing…"
+                  : cloudStatus === "offline"
+                    ? "Offline — will sync when internet returns"
+                    : "Cloud sync needs attention"}
             </p>
             <p className="mt-2 text-sm text-slate-600">
-              Real records are stored in this browser, not shared automatically with your phone. To copy them, download a backup here, send the file to the other device, then restore it there.
+              Real records sync across phones and computers while they are online. Open this site on another device with internet to see the same students, staff, and classes.
             </p>
             {mode === "demo" && (
               <p className="mt-2 text-sm font-medium text-amber-900">
@@ -227,7 +237,7 @@ export default function AdminDashboardPage() {
             )}
             {mode === "real" && !hasRealVault && (
               <p className="mt-2 text-sm text-slate-600">
-                This device is empty. If you already enrolled students on a computer, download a backup on that computer and restore it here. Creating records on the phone will not show the computer&apos;s list, and the other way around.
+                No school records have been saved yet. Add them here, or wait a moment if another device is still uploading.
               </p>
             )}
             {!vaultHealthy && (
@@ -274,7 +284,7 @@ export default function AdminDashboardPage() {
             type="button"
             onClick={() => {
               downloadBackup();
-              setNotice("Backup file downloaded. Send it to your phone, then restore it there.");
+              setNotice("Backup file downloaded. Keep it as a spare copy; live devices already sync when online.");
             }}
             disabled={!hasRealVault}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
