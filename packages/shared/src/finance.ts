@@ -7,6 +7,7 @@ export type PayrollStatus = "draft" | "processed" | "paid";
 
 export interface FeeItem {
   category: FeeCategory;
+  name?: string;
   amount: number;
 }
 
@@ -40,6 +41,8 @@ export interface Invoice {
   invoiceNo: string;
   studentId: string;
   feeStructureId: string;
+  structureName?: string;
+  items?: FeeItem[];
   totalAmount: number;
   amountPaid: number;
   balance: number;
@@ -139,6 +142,18 @@ export const FEE_CATEGORIES: FeeCategory[] = [
   "Transport",
   "Other",
 ];
+
+export function feeItemLabel(item: FeeItem) {
+  return item.name?.trim() || item.category;
+}
+
+export function copyFeeItems(items: FeeItem[]): FeeItem[] {
+  return items.map((item) => ({
+    category: item.category,
+    name: item.name?.trim() || undefined,
+    amount: Number(item.amount) || 0,
+  }));
+}
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
   cash: "Cash",

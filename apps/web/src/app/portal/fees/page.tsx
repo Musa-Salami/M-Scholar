@@ -5,6 +5,7 @@ import { PORTAL_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { DataTable, StatusBadge } from "@/components/finance-ui";
+import { InvoiceItemsList } from "@/components/invoice-items";
 import { ReceiptModal } from "@/components/receipt-modal";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useFinanceStore } from "@/lib/finance-store";
@@ -17,6 +18,7 @@ export default function PortalFeesPage() {
   const students = useFinanceStore((s) => s.students ?? []);
   const invoicesAll = useFinanceStore((s) => s.invoices ?? []);
   const paymentsAll = useFinanceStore((s) => s.payments ?? []);
+  const getInvoiceItems = useFinanceStore((s) => s.getInvoiceItems);
   const [receipt, setReceipt] = useState<Payment | null>(null);
 
   if (!ready || !user) {
@@ -27,9 +29,8 @@ export default function PortalFeesPage() {
     );
   }
 
-  const ids = new Set(
-    students.filter((st) => studentLinkedToUser(st, user)).map((s) => s.id)
-  );
+  const linked = students.filter((st) => studentLinkedToUser(st, user));
+  const ids = new Set(linked.map((s) => s.id));
   const invoices = invoicesAll.filter((i) => ids.has(i.studentId));
   const payments = paymentsAll.filter((p) => ids.has(p.studentId));
   const totalDue = invoices.reduce((s, i) => s + (i.balance || 0), 0);
@@ -38,7 +39,7 @@ export default function PortalFeesPage() {
     <PortalShell navItems={PORTAL_NAV} title="Parent / Student Portal">
       <PageHeader
         title="Fees & Payments"
-        description="View invoices, outstanding dues, and download payment receipts."
+        description="See every fee item on each invoice, outstanding dues, and download receipts that match the bill."
       />
 
       <div className="card-shadow mb-6 rounded-2xl border border-sky-100 bg-sky-50 p-5">
@@ -47,23 +48,37 @@ export default function PortalFeesPage() {
       </div>
 
       <h3 className="mb-4 font-display font-semibold text-slate-900">Invoices</h3>
-      <DataTable headers={["Invoice", "Student", "Term", "Total", "Paid", "Balance", "Status", "Due"]}>
+      <div className="space-y-4">
         {invoices.map((inv) => {
-          const student = students.find((st) => st.id === inv.studentId);
+          const student = linked.find((st) => st.id === inv.studentId) ?? students.find((st) => st.id === inv.studentId);
+          const items = getInvoiceItems(inv);
           return (
-            <tr key={inv.id} className="hover:bg-slate-50">
-              <td className="px-6 py-4 font-medium">{inv.invoiceNo}</td>
-              <td className="px-6 py-4">{student?.name ?? "—"}</td>
-              <td className="px-6 py-4 text-slate-500">{inv.term}</td>
-              <td className="px-6 py-4">{formatCurrency(inv.totalAmount)}</td>
-              <td className="px-6 py-4">{formatCurrency(inv.amountPaid)}</td>
-              <td className="px-6 py-4 font-medium">{formatCurrency(inv.balance)}</td>
-              <td className="px-6 py-4"><StatusBadge status={inv.status} /></td>
-              <td className="px-6 py-4 text-slate-500">{inv.dueDate}</td>
-            </tr>
+            <div key={inv.id} className="card-shadow rounded-2xl border border-slate-100 bg-white p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold text-slate-900">{inv.invoiceNo}</p>
+                  <p className="text-sm text-slate-500">
+                    {student?.name ?? "—"} · {inv.structureName || inv.term} · {inv.session}
+                  </p>
+                </div>
+                <StatusBadge status={inv.status} />
+              </div>
+              <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">What this invoice covers</p>
+              <InvoiceItemsList items={items} totalAmount={inv.totalAmount} className="mt-2" />
+              <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-600">
+                <span>Paid {formatCurrency(inv.amountPaid)}</span>
+                <span className="font-medium text-slate-900">Balance {formatCurrency(inv.balance)}</span>
+                <span>Due {inv.dueDate}</span>
+              </div>
+            </div>
           );
         })}
-      </DataTable>
+        {invoices.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+            No invoices yet. Fee items will appear here after the school generates them.
+          </div>
+        )}
+      </div>
 
       <h3 className="mb-4 mt-8 font-display font-semibold text-slate-900">Payment history & receipts</h3>
       <DataTable headers={["Receipt", "Student", "Amount", "Date", ""]}>
@@ -77,7 +92,7 @@ export default function PortalFeesPage() {
               <td className="px-6 py-4 text-slate-500">{new Date(pay.paidAt).toLocaleDateString()}</td>
               <td className="px-6 py-4">
                 <button onClick={() => setReceipt(pay)} className="text-sm font-medium text-sky-600 hover:underline">
-                  Download receipt
+                  View receipt
                 </button>
               </td>
             </tr>

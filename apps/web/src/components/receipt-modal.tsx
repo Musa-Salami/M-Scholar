@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { Download, X } from "lucide-react";
 import type { InvoiceStatus, Payment } from "@m-scholar/shared";
-import { PAYMENT_METHOD_LABELS } from "@m-scholar/shared";
+import { PAYMENT_METHOD_LABELS, feeItemLabel } from "@m-scholar/shared";
 import { formatCurrency } from "@/lib/utils";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useSchoolStore } from "@/lib/school-store";
 import { SimplePdf, formatPdfMoney } from "@/lib/pdf";
 import { DocumentLetterhead } from "@/components/document-letterhead";
+import { InvoiceItemsList } from "@/components/invoice-items";
 
 interface ReceiptModalProps {
   payment: Payment;
@@ -31,9 +32,11 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
   const [busy, setBusy] = useState(false);
   const getStudent = useFinanceStore((s) => s.getStudent);
   const invoices = useFinanceStore((s) => s.invoices);
+  const getInvoiceItems = useFinanceStore((s) => s.getInvoiceItems);
   const settings = useSchoolStore((s) => s.settings);
   const student = getStudent(payment.studentId);
   const invoice = invoices.find((i) => i.id === payment.invoiceId);
+  const items = invoice ? getInvoiceItems(invoice) : [];
   const stamp = receiptStamp(invoice?.status, invoice?.balance);
 
   const downloadPdf = async () => {
@@ -63,6 +66,12 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
         ["Invoice total", formatPdfMoney(invoice?.totalAmount ?? payment.amount)],
         ["Balance remaining", formatPdfMoney(invoice?.balance ?? 0)],
       ]);
+      if (items.length) {
+        pdf.table(
+          ["Fee item", "Category", "Amount"],
+          items.map((item) => [feeItemLabel(item), item.category, formatPdfMoney(item.amount)])
+        );
+      }
       pdf.callout("Amount paid", formatPdfMoney(payment.amount));
       pdf.paragraph(
         `Received by ${payment.recordedBy}. Keep this receipt as an official record of payment.`
@@ -130,6 +139,18 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
                 <td className="py-2 text-slate-500">Reference</td>
                 <td className="py-2 text-right">{payment.reference}</td>
               </tr>
+            </tbody>
+          </table>
+
+          {items.length > 0 && (
+            <div className="relative mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Fee items covered</p>
+              <InvoiceItemsList items={items} totalAmount={invoice?.totalAmount} className="mt-2" />
+            </div>
+          )}
+
+          <table className="relative mt-2 w-full text-sm">
+            <tbody>
               <tr className="border-b border-slate-100">
                 <td className="py-2 font-semibold">Amount paid</td>
                 <td className="py-2 text-right font-semibold text-emerald-700">{formatCurrency(payment.amount)}</td>

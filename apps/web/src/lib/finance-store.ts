@@ -4,6 +4,7 @@ import { create } from "zustand";
 import type {
   ExpenditureRecord,
   ExpenseCategory,
+  FeeItem,
   FeeStructure,
   IncomeRecord,
   IncomeSource,
@@ -16,6 +17,7 @@ import type {
   StaffMember,
   Student,
 } from "@m-scholar/shared";
+import { copyFeeItems } from "@m-scholar/shared";
 import { findSchoolClass } from "@/lib/school-store";
 
 const SESSION = "2026/2027";
@@ -145,6 +147,26 @@ function normalizeStudent(s: Student): Student {
     studentPhone: s.studentPhone ?? "",
     disability: s.disability ?? "None",
     allergy: s.allergy ?? "None",
+  };
+}
+
+function snapshotFromStructure(structure: FeeStructure) {
+  const items = copyFeeItems(structure.items).filter((item) => item.amount > 0);
+  const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+  return { items, totalAmount, structureName: structure.name };
+}
+
+function withInvoiceItems(invoice: Invoice, structures: FeeStructure[]): Invoice {
+  if (invoice.items && invoice.items.length) {
+    return { ...invoice, items: copyFeeItems(invoice.items) };
+  }
+  const structure = structures.find((f) => f.id === invoice.feeStructureId);
+  if (!structure) return invoice;
+  const snap = snapshotFromStructure(structure);
+  return {
+    ...invoice,
+    items: snap.items,
+    structureName: invoice.structureName || snap.structureName,
   };
 }
 
@@ -309,7 +331,12 @@ interface FinanceState {
   invoiceSeq: number;
   receiptSeq: number;
 
-  addFeeStructure: (data: Omit<FeeStructure, "id" | "totalAmount">) => void;
+  addFeeStructure: (data: Omit<FeeStructure, "id" | "totalAmount">) => { ok: boolean; error?: string };
+  updateFeeStructure: (
+    id: string,
+    data: Omit<FeeStructure, "id" | "totalAmount">
+  ) => { ok: boolean; error?: string };
+  deleteFeeStructure: (id: string) => { ok: boolean; error?: string };
   addStudent: (data: Omit<Student, "id">) => { ok: boolean; error?: string; student?: Student };
   updateStudent: (id: string, data: Omit<Student, "id">) => { ok: boolean; error?: string };
   deleteStudent: (id: string) => void;
@@ -348,6 +375,7 @@ interface FinanceState {
 
   getStudent: (id: string) => Student | undefined;
   getFeeStructure: (id: string) => FeeStructure | undefined;
+  getInvoiceItems: (invoice: Invoice) => FeeItem[];
   getPaymentsForInvoice: (invoiceId: string) => Payment[];
   getPaymentsForParent: (email: string) => Payment[];
   getInvoicesForParent: (email: string) => Invoice[];
@@ -391,8 +419,8 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
       applyPersisted: (data) =>
         set({
           students: (data.students ?? []).map(normalizeStudent),
-          feeStructures: data.feeStructures ?? SEED_FEE_STRUCTURES,
-          invoices: data.invoices ?? [],
+          feeStructures: data.feeStructures ?? [],
+          invoices: (data.invoices ?? []).map((invoice) => withInvoiceItems(invoice, data.feeStructures ?? [])),
           payments: data.payments ?? [],
           income: data.income ?? [],
           expenditure: data.expenditure ?? [],
@@ -440,13 +468,73 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
       },
 
       addFeeStructure: (data) => {
-        const totalAmount = data.items.reduce((s, i) => s + i.amount, 0);
+        const items = copyFeeItems(data.items).filter((item) => item.amount > 0);
+        if (!data.name.trim()) return { ok: false, error: "Enter a fee structure name." };
+        if (!findSchoolClass(data.className)) {
+          return { ok: false, error: "Choose a class that already exists. Create it on Classes first." };
+        }
+        if (!items.length) return { ok: false, error: "Add at least one fee item with an amount." };
+        const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
         const structure: FeeStructure = {
           ...data,
+          name: data.name.trim(),
+          className: data.className.trim(),
+          term: data.term.trim(),
+          session: data.session.trim(),
+          items,
           id: `fs${Date.now()}`,
           totalAmount,
         };
         set((s) => ({ feeStructures: [...s.feeStructures, structure] }));
+        return { ok: true };
+      },
+
+      updateFeeStructure: (id, data) => {
+        const current = get().feeStructures.find((f) => f.id === id);
+        if (!current) return { ok: false, error: "Fee structure not found." };
+        const items = copyFeeItems(data.items).filter((item) => item.amount > 0);
+        if (!data.name.trim()) return { ok: false, error: "Enter a fee structure name." };
+        if (!findSchoolClass(data.className)) {
+          return { ok: false, error: "Choose a class that already exists. Create it on Classes first." };
+        }
+        if (!items.length) return { ok: false, error: "Add at least one fee item with an amount." };
+        const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+        const next: FeeStructure = {
+          ...current,
+          name: data.name.trim(),
+          className: data.className.trim(),
+          term: data.term.trim(),
+          session: data.session.trim(),
+          items,
+          totalAmount,
+        };
+        const snap = snapshotFromStructure(next);
+        set((s) => ({
+          feeStructures: s.feeStructures.map((f) => (f.id === id ? next : f)),
+          invoices: s.invoices.map((invoice) => {
+            if (invoice.feeStructureId !== id || invoice.amountPaid > 0) return invoice;
+            return {
+              ...invoice,
+              ...snap,
+              balance: snap.totalAmount,
+              status: computeStatus(snap.totalAmount, invoice.amountPaid, invoice.dueDate),
+            };
+          }),
+        }));
+        return { ok: true };
+      },
+
+      deleteFeeStructure: (id) => {
+        const current = get().feeStructures.find((f) => f.id === id);
+        if (!current) return { ok: false, error: "Fee structure not found." };
+        const snap = snapshotFromStructure(current);
+        set((s) => ({
+          feeStructures: s.feeStructures.filter((f) => f.id !== id),
+          invoices: s.invoices.map((invoice) =>
+            invoice.feeStructureId === id ? withInvoiceItems({ ...invoice, ...snap }, [current]) : invoice
+          ),
+        }));
+        return { ok: true };
       },
 
       generateInvoices: (feeStructureId) => {
@@ -463,6 +551,7 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
           (s) => s.className === structure.className && !existing.has(s.id)
         );
 
+        const snap = snapshotFromStructure(structure);
         let seq = get().invoiceSeq;
         const newInvoices: Invoice[] = targets.map((student) => {
           seq += 1;
@@ -471,9 +560,11 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
             invoiceNo: invoiceNo(seq),
             studentId: student.id,
             feeStructureId,
-            totalAmount: structure.totalAmount,
+            structureName: snap.structureName,
+            items: snap.items,
+            totalAmount: snap.totalAmount,
             amountPaid: 0,
-            balance: structure.totalAmount,
+            balance: snap.totalAmount,
             status: "pending" as InvoiceStatus,
             dueDate: "2026-04-15",
             term: structure.term,
@@ -685,6 +776,10 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
 
       getStudent: (id) => (get().students ?? []).find((s) => s.id === id),
       getFeeStructure: (id) => (get().feeStructures ?? []).find((f) => f.id === id),
+      getInvoiceItems: (invoice) => {
+        if (invoice.items && invoice.items.length) return invoice.items;
+        return get().feeStructures.find((f) => f.id === invoice.feeStructureId)?.items ?? [];
+      },
       getPaymentsForInvoice: (invoiceId) => (get().payments ?? []).filter((p) => p.invoiceId === invoiceId),
       getPaymentsForParent: (email) => {
         const studentIds = new Set(

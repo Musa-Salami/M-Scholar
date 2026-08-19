@@ -5,6 +5,7 @@ import { FINANCE_NAV, PAYMENT_METHOD_LABELS, type PaymentMethod } from "@m-schol
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { DataTable, FormField, inputClass, selectClass, btnPrimary } from "@/components/finance-ui";
+import { InvoiceItemsList } from "@/components/invoice-items";
 import { ReceiptModal } from "@/components/receipt-modal";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useAuthStore } from "@/lib/auth-store";
@@ -15,7 +16,11 @@ import type { Payment } from "@m-scholar/shared";
 export default function PaymentsPage() {
   useRequireAuth(["account_officer"]);
   const { user } = useAuthStore();
-  const { invoices, payments, recordPayment, getStudent } = useFinanceStore();
+  const invoices = useFinanceStore((s) => s.invoices);
+  const payments = useFinanceStore((s) => s.payments);
+  const recordPayment = useFinanceStore((s) => s.recordPayment);
+  const getStudent = useFinanceStore((s) => s.getStudent);
+  const getInvoiceItems = useFinanceStore((s) => s.getInvoiceItems);
   const [selectedInvoice, setSelectedInvoice] = useState("");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("transfer");
@@ -88,6 +93,16 @@ export default function PaymentsPage() {
           <FormField label="Reference">
             <input className={inputClass} value={reference} onChange={(e) => setReference(e.target.value)} required placeholder="TXN-12345" />
           </FormField>
+          {selected && (
+            <div className="sm:col-span-2 rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">This invoice covers</p>
+              <InvoiceItemsList
+                items={getInvoiceItems(selected)}
+                totalAmount={selected.totalAmount}
+                className="mt-2"
+              />
+            </div>
+          )}
         </div>
         {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
         <button type="submit" className={`mt-4 ${btnPrimary}`} disabled={!selectedInvoice}>
