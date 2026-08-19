@@ -68,6 +68,7 @@ interface CommsState {
   getThreadForParent: (parentEmail: string) => MessageThread | undefined;
   getMessages: (threadId: string) => ChatMessage[];
   getOrCreateThread: (studentId: string, parentEmail: string, teacherName: string, studentName: string, className: string) => MessageThread;
+  removeStudentRecords: (studentId: string) => void;
   resetToDemo: () => void;
   applyPersisted: (data: {
     notes: TeacherNote[];
@@ -163,6 +164,15 @@ export const useCommsStore = create<CommsState>()((set, get) => ({
         };
         set((s) => ({ threads: [...s.threads, thread] }));
         return thread;
+      },
+
+      removeStudentRecords: (studentId) => {
+        const threadIds = new Set(get().threads.filter((t) => t.studentId === studentId).map((t) => t.id));
+        set((s) => ({
+          notes: s.notes.filter((n) => n.studentId !== studentId),
+          threads: s.threads.filter((t) => t.studentId !== studentId),
+          messages: s.messages.filter((m) => !threadIds.has(m.threadId)),
+        }));
       },
     })
 );

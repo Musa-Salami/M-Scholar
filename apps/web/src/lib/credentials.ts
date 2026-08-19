@@ -81,11 +81,10 @@ export function studentLinkedToUser(student: Student, user: AuthUser): boolean {
 export function findSchoolUserByLogin(users: LoginProfile[], identifier: string): LoginProfile | undefined {
   const raw = identifier.trim();
   if (!raw) return undefined;
-  const active = users.filter((u) => u.status !== "Inactive");
   if (looksLikeEmail(raw)) {
-    return active.find((u) => emailsMatch(u.email, raw));
+    return users.find((u) => emailsMatch(u.email, raw));
   }
-  return active.find((u) => phonesMatch(u.phone, raw)) ?? active.find((u) => emailsMatch(u.email, raw));
+  return users.find((u) => phonesMatch(u.phone, raw)) ?? users.find((u) => emailsMatch(u.email, raw));
 }
 
 export function findSchoolUserForAuth(users: LoginProfile[], user: AuthUser): LoginProfile | undefined {

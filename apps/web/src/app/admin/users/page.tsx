@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Copy, Eye, Plus, Search, X } from "lucide-react";
+import { Copy, Eye, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { ADMIN_NAV, ROLE_LABELS, type UserRole, type Student } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
@@ -11,6 +11,7 @@ import { useSchoolReady } from "@/hooks/use-school-ready";
 import { emailsMatch, isFamilyRole, loginLabel, loginValue, phonesMatch } from "@/lib/credentials";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useSchoolStore, type SchoolClass, type SchoolUser } from "@/lib/school-store";
+import { useAuthStore } from "@/lib/auth-store";
 
 const ROLE_BADGE: Record<UserRole, string> = {
   super_admin: "bg-violet-100 text-violet-700",
@@ -44,12 +45,23 @@ export default function AdminUsersPage() {
   const users = useSchoolStore((s) => s.users);
   const classes = useSchoolStore((s) => s.classes);
   const addUser = useSchoolStore((s) => s.addUser);
+  const updateUser = useSchoolStore((s) => s.updateUser);
+  const deleteUser = useSchoolStore((s) => s.deleteUser);
   const settings = useSchoolStore((s) => s.settings);
   const students = useFinanceStore((s) => s.students);
+  const currentUserId = useAuthStore((s) => s.user?.id);
   const [search, setSearch] = useState("");
   const [group, setGroup] = useState<UserGroup>("teachers");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", role: "class_teacher" as UserRole });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    role: "class_teacher" as UserRole,
+    status: "Active" as "Active" | "Inactive",
+  });
   const [formError, setFormError] = useState("");
   const [created, setCreated] = useState<SchoolUser | null>(null);
   const [copied, setCopied] = useState(false);
@@ -89,12 +101,29 @@ export default function AdminUsersPage() {
 
   const openForm = () => {
     setFormError("");
+    setEditingId(null);
     setForm({
       name: "",
       email: "",
       phone: "",
       password: settings.defaultStaffPassword || "",
       role: "class_teacher",
+      status: "Active",
+    });
+    setShowForm(true);
+  };
+
+  const openEdit = (user: SchoolUser) => {
+    setFormError("");
+    setCreated(null);
+    setEditingId(user.id);
+    setForm({
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      password: "",
+      role: user.role,
+      status: user.status,
     });
     setShowForm(true);
   };
@@ -103,13 +132,35 @@ export default function AdminUsersPage() {
     setForm({
       ...form,
       role,
-      password: isFamilyRole(role) ? settings.defaultFamilyPassword : settings.defaultStaffPassword,
+      password: editingId ? form.password : isFamilyRole(role) ? settings.defaultFamilyPassword : settings.defaultStaffPassword,
     });
   };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
+    if (editingId) {
+      const patch: Partial<Omit<SchoolUser, "id">> = {
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        role: form.role,
+        status: form.status,
+      };
+      if (form.password.trim()) patch.password = form.password.trim();
+      if (editingId === currentUserId && form.status === "Inactive") {
+        setFormError("You cannot set your own account to Inactive.");
+        return;
+      }
+      const result = updateUser(editingId, patch);
+      if (!result.ok) {
+        setFormError(result.error ?? "Could not update this profile.");
+        return;
+      }
+      setShowForm(false);
+      setEditingId(null);
+      return;
+    }
     const result = addUser({
       name: form.name,
       email: form.email,
@@ -121,10 +172,41 @@ export default function AdminUsersPage() {
       setFormError(result.error ?? "Could not create this profile.");
       return;
     }
+    if (form.status === "Inactive") {
+      updateUser(result.user.id, { status: "Inactive" });
+    }
     setCreated(result.user);
     setCopied(false);
-    setForm({ name: "", email: "", phone: "", password: settings.defaultStaffPassword || "", role: "class_teacher" });
+    setForm({ name: "", email: "", phone: "", password: settings.defaultStaffPassword || "", role: "class_teacher", status: "Active" });
     setShowForm(false);
+  };
+
+  const handleDeleteUser = (user: SchoolUser) => {
+    if (user.id === currentUserId) {
+      window.alert("You cannot delete the account you are signed in with.");
+      return;
+    }
+    const ok = window.confirm(`Delete ${user.name}? They will no longer be able to sign in.`);
+    if (!ok) return;
+    const result = deleteUser(user.id);
+    if (!result.ok) {
+      window.alert(result.error ?? "Could not delete this profile.");
+      return;
+    }
+    if (selectedId === user.id) setSelectedId(null);
+    if (editingId === user.id) {
+      setShowForm(false);
+      setEditingId(null);
+    }
+  };
+
+  const handleStatus = (user: SchoolUser, status: "Active" | "Inactive") => {
+    if (user.id === currentUserId && status === "Inactive") {
+      window.alert("You cannot set your own account to Inactive.");
+      return;
+    }
+    const result = updateUser(user.id, { status });
+    if (!result.ok) window.alert(result.error ?? "Could not update status.");
   };
 
   const copyDetails = async (user: SchoolUser) => {
@@ -188,7 +270,7 @@ export default function AdminUsersPage() {
 
       {showForm && (
         <form onSubmit={handleCreate} className="card-shadow mb-6 rounded-2xl border border-slate-100 bg-white p-6">
-          <h3 className="font-display font-semibold text-slate-900">New user profile</h3>
+          <h3 className="font-display font-semibold text-slate-900">{editingId ? "Edit user profile" : "New user profile"}</h3>
           <p className="mt-1 text-sm text-slate-500">
             {familyForm
               ? "Parent and student accounts sign in with phone number and password."
@@ -249,20 +331,28 @@ export default function AdminUsersPage() {
             )}
             <input
               type="text"
-              placeholder="Password"
+              placeholder={editingId ? "New password (leave blank to keep current)" : "Password"}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500 sm:col-span-2"
-              required
-              minLength={6}
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+              required={!editingId}
+              minLength={editingId ? undefined : 6}
             />
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value as "Active" | "Inactive" })}
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
           </div>
           {formError && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</p>}
           <div className="mt-4 flex gap-3">
             <button type="submit" className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white">
-              Create profile
+              {editingId ? "Save changes" : "Create profile"}
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm">
+            <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="rounded-xl border border-slate-200 px-4 py-2 text-sm">
               Cancel
             </button>
           </div>
@@ -343,18 +433,42 @@ export default function AdminUsersPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                      {user.status}
-                    </span>
+                    <select
+                      value={user.status}
+                      onChange={(e) => handleStatus(user, e.target.value as "Active" | "Inactive")}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium outline-none ${
+                        user.status === "Active" ? "bg-emerald-100 text-emerald-800" : "bg-slate-200 text-slate-700"
+                      }`}
+                      aria-label={`${user.name} status`}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
                   </td>
                   <td className="px-6 py-4">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedId(user.id)}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-violet-700 hover:bg-violet-50"
-                    >
-                      <Eye className="h-4 w-4" /> Pull record
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedId(user.id)}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-violet-700 hover:bg-violet-50"
+                      >
+                        <Eye className="h-4 w-4" /> Pull record
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openEdit(user)}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                      >
+                        <Pencil className="h-4 w-4" /> Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUser(user)}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" /> Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -378,6 +492,7 @@ function UserRecordPanel({
   onClose: () => void;
 }) {
   const updateUser = useSchoolStore((s) => s.updateUser);
+  const currentUserId = useAuthStore((s) => s.user?.id);
   const [newPassword, setNewPassword] = useState("");
   const [loginId, setLoginId] = useState(loginValue(user));
   const [resetMsg, setResetMsg] = useState("");
@@ -409,8 +524,26 @@ function UserRecordPanel({
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Pulled record</p>
           <h3 className="font-display font-semibold text-slate-900">{user.name}</h3>
           <p className="text-sm text-slate-500">
-            {loginLabel(user.role)}: {loginValue(user) || "—"} · {ROLE_LABELS[user.role]} · {user.status}
+            {loginLabel(user.role)}: {loginValue(user) || "—"} · {ROLE_LABELS[user.role]}
           </p>
+          <label className="mt-2 inline-flex items-center gap-2 text-sm text-slate-600">
+            Status
+            <select
+              value={user.status}
+              onChange={(e) => {
+                const status = e.target.value as "Active" | "Inactive";
+                if (user.id === currentUserId && status === "Inactive") {
+                  window.alert("You cannot set your own account to Inactive.");
+                  return;
+                }
+                updateUser(user.id, { status });
+              }}
+              className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium"
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </label>
         </div>
         <button type="button" onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
           <X className="h-4 w-4" />

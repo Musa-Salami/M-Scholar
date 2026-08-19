@@ -71,6 +71,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   login: (identifier, password) => {
     const schoolUser = findSchoolUserByLogin(useSchoolStore.getState().users ?? [], identifier);
     if (schoolUser) {
+      if (schoolUser.status === "Inactive") {
+        return { ok: false, error: "This account is inactive. Ask the school admin to set it Active." };
+      }
       const demo = schoolUser.email ? DEMO_USERS[schoolUser.email.toLowerCase()] : undefined;
       const expected = schoolUser.password || demo?.password;
       if (!expected || expected !== password) {

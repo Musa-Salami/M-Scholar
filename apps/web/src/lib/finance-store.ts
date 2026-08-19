@@ -310,6 +310,8 @@ interface FinanceState {
   addFeeStructure: (data: Omit<FeeStructure, "id" | "totalAmount">) => void;
   addStudent: (data: Omit<Student, "id">) => void;
   updateStudent: (id: string, data: Omit<Student, "id">) => void;
+  deleteStudent: (id: string) => void;
+  renameClass: (from: string, to: string) => void;
   resetToDemo: () => void;
   applyPersisted: (data: {
     students: Student[];
@@ -401,6 +403,22 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
       updateStudent: (id, data) => {
         set((s) => ({
           students: s.students.map((st) => (st.id === id ? { ...st, ...data } : st)),
+        }));
+      },
+
+      deleteStudent: (id) => {
+        set((s) => ({
+          students: s.students.filter((st) => st.id !== id),
+          invoices: s.invoices.filter((i) => i.studentId !== id),
+          payments: s.payments.filter((p) => p.studentId !== id),
+        }));
+      },
+
+      renameClass: (from, to) => {
+        if (!from || from === to) return;
+        set((s) => ({
+          students: s.students.map((st) => (st.className === from ? { ...st, className: to } : st)),
+          feeStructures: s.feeStructures.map((fs) => (fs.className === from ? { ...fs, className: to } : fs)),
         }));
       },
 

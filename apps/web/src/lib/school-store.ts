@@ -86,7 +86,10 @@ interface SchoolState {
   applyPersisted: (data: { users: SchoolUser[]; classes: SchoolClass[]; settings?: SchoolSettings }) => void;
   addUser: (user: Omit<SchoolUser, "id" | "status">) => { ok: boolean; error?: string; user?: SchoolUser };
   updateUser: (id: string, patch: Partial<Omit<SchoolUser, "id">>) => { ok: boolean; error?: string };
+  deleteUser: (id: string) => { ok: boolean; error?: string };
   addClass: (name: string, teacherId: string | null) => { ok: boolean; error?: string };
+  updateClass: (id: string, patch: { name?: string; teacherId?: string | null }) => { ok: boolean; error?: string; previousName?: string };
+  deleteClass: (id: string) => { ok: boolean; error?: string };
   assignTeacher: (classId: string, teacherId: string | null) => void;
   updateSettings: (settings: SchoolSettings) => void;
   syncClassCounts: (students: { className: string }[]) => void;
@@ -99,6 +102,7 @@ function normalizeUser(user: SchoolUser): SchoolUser {
     email: user.email ?? "",
     phone: user.phone || demo?.user.phone || "",
     password: user.password || demo?.password || "",
+    status: user.status === "Inactive" ? "Inactive" : "Active",
   };
 }
 
@@ -176,7 +180,27 @@ export const useSchoolStore = create<SchoolState>()((set, get) => ({
     }
     const conflict = loginConflict(get().users, next, id);
     if (conflict) return { ok: false, error: conflict };
-    set((s) => ({ users: s.users.map((u) => (u.id === id ? next : u)) }));
+    set((s) => ({
+      users: s.users.map((u) => (u.id === id ? next : u)),
+      classes:
+        next.role === "class_teacher" && next.status === "Inactive"
+          ? s.classes.map((c) => (c.teacherId === id ? { ...c, teacherId: null } : c))
+          : s.classes,
+    }));
+    return { ok: true };
+  },
+
+  deleteUser: (id) => {
+    const current = get().users.find((u) => u.id === id);
+    if (!current) return { ok: false, error: "User not found." };
+    if (current.role === "super_admin") {
+      const admins = get().users.filter((u) => u.role === "super_admin" && u.id !== id);
+      if (admins.length === 0) return { ok: false, error: "Keep at least one admin account." };
+    }
+    set((s) => ({
+      users: s.users.filter((u) => u.id !== id),
+      classes: s.classes.map((c) => (c.teacherId === id ? { ...c, teacherId: null } : c)),
+    }));
     return { ok: true };
   },
 
@@ -188,6 +212,7 @@ export const useSchoolStore = create<SchoolState>()((set, get) => ({
     if (teacherId) {
       const teacher = get().users.find((u) => u.id === teacherId && u.role === "class_teacher");
       if (!teacher) return { ok: false, error: "Select a teacher whose profile already exists." };
+      if (teacher.status !== "Active") return { ok: false, error: "That teacher is Inactive. Set them Active first." };
     }
     set((s) => ({
       classes: [...s.classes, { id: `c${Date.now()}`, name: trimmed, studentCount: 0, teacherId }],
@@ -195,10 +220,39 @@ export const useSchoolStore = create<SchoolState>()((set, get) => ({
     return { ok: true };
   },
 
+  updateClass: (id, patch) => {
+    const current = get().classes.find((c) => c.id === id);
+    if (!current) return { ok: false, error: "Class not found." };
+    const name = (patch.name ?? current.name).trim();
+    if (!name) return { ok: false, error: "Enter a class name." };
+    if (get().classes.some((c) => c.id !== id && c.name.toLowerCase() === name.toLowerCase())) {
+      return { ok: false, error: "A class with this name already exists." };
+    }
+    const teacherId = patch.teacherId === undefined ? current.teacherId : patch.teacherId;
+    if (teacherId) {
+      const teacher = get().users.find((u) => u.id === teacherId && u.role === "class_teacher" && u.status === "Active");
+      if (!teacher) return { ok: false, error: "Select an active class teacher." };
+    }
+    set((s) => ({
+      classes: s.classes.map((c) => (c.id === id ? { ...c, name, teacherId } : c)),
+    }));
+    return { ok: true, previousName: current.name };
+  },
+
+  deleteClass: (id) => {
+    const current = get().classes.find((c) => c.id === id);
+    if (!current) return { ok: false, error: "Class not found." };
+    if (current.studentCount > 0) {
+      return { ok: false, error: "Move or delete students in this class first." };
+    }
+    set((s) => ({ classes: s.classes.filter((c) => c.id !== id) }));
+    return { ok: true };
+  },
+
   assignTeacher: (classId, teacherId) => {
     if (teacherId) {
       const teacher = get().users.find((u) => u.id === teacherId && u.role === "class_teacher");
-      if (!teacher) return;
+      if (!teacher || teacher.status !== "Active") return;
     }
     set((s) => ({
       classes: s.classes.map((c) => (c.id === classId ? { ...c, teacherId } : c)),

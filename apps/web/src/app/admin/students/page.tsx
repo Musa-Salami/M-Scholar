@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Eye, Pencil, Plus, X } from "lucide-react";
+import { Eye, Pencil, Plus, Trash2, X } from "lucide-react";
 import {
   ADMIN_NAV,
   buildAdmissionNo,
@@ -18,6 +18,8 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useSchoolReady } from "@/hooks/use-school-ready";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useSchoolStore } from "@/lib/school-store";
+import { useAcademicStore } from "@/lib/academic-store";
+import { useCommsStore } from "@/lib/comms-store";
 
 const fieldClass =
   "w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500 disabled:bg-slate-50 disabled:text-slate-600";
@@ -64,6 +66,7 @@ export default function AdminStudentsPage() {
   const students = useFinanceStore((s) => s.students);
   const addStudent = useFinanceStore((s) => s.addStudent);
   const updateStudent = useFinanceStore((s) => s.updateStudent);
+  const deleteStudent = useFinanceStore((s) => s.deleteStudent);
   const classes = useSchoolStore((s) => s.classes);
 
   const [mode, setMode] = useState<Mode>("closed");
@@ -150,6 +153,16 @@ export default function AdminStudentsPage() {
     }
     useSchoolStore.getState().syncClassCounts(useFinanceStore.getState().students);
     closePanel();
+  };
+
+  const handleDelete = (student: Student) => {
+    const ok = window.confirm(`Delete ${student.name} (${student.admissionNo})? Fee invoices and class records for this pupil will also be removed.`);
+    if (!ok) return;
+    deleteStudent(student.id);
+    useAcademicStore.getState().removeStudentRecords(student.id);
+    useCommsStore.getState().removeStudentRecords(student.id);
+    useSchoolStore.getState().syncClassCounts(useFinanceStore.getState().students);
+    if (editingId === student.id) closePanel();
   };
 
   const title =
@@ -258,6 +271,18 @@ export default function AdminStudentsPage() {
                   Edit record
                 </button>
                 {editingId && <StudentResultButtons studentId={editingId} />}
+                {editingId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const current = students.find((s) => s.id === editingId);
+                      if (current) handleDelete(current);
+                    }}
+                    className="rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50"
+                  >
+                    Delete
+                  </button>
+                )}
                 <button type="button" onClick={closePanel} className={btnSecondary}>Close</button>
               </>
             ) : (
@@ -298,6 +323,13 @@ export default function AdminStudentsPage() {
                   className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-slate-700 hover:bg-slate-100"
                 >
                   <Pencil className="h-4 w-4" /> Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(s)}
+                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" /> Delete
                 </button>
                 <StudentResultButtons studentId={s.id} compact />
               </div>

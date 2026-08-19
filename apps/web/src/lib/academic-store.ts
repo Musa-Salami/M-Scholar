@@ -93,6 +93,8 @@ interface AcademicState {
   getResultsForStudent: (studentId: string) => TermResult[];
   getAttendanceForStudent: (studentId: string) => { date: string; status: AttendanceStatus }[];
   getAttendanceSummary: (studentId: string) => { present: number; absent: number; late: number; total: number; percent: number };
+  removeStudentRecords: (studentId: string) => void;
+  renameClass: (from: string, to: string) => void;
   resetToDemo: () => void;
   applyPersisted: (data: {
     registers: AttendanceRegister[];
@@ -310,6 +312,26 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
         const late = entries.filter((e) => e.status === "late").length;
         const total = entries.length || 1;
         return { present, absent, late, total, percent: Math.round((present / total) * 100) };
+      },
+
+      removeStudentRecords: (studentId) => {
+        set((s) => ({
+          scores: s.scores.filter((sc) => sc.studentId !== studentId),
+          termResults: s.termResults.filter((r) => r.studentId !== studentId),
+          registers: s.registers.map((reg) => ({
+            ...reg,
+            records: (reg.records ?? []).filter((r) => r.studentId !== studentId),
+          })),
+        }));
+      },
+
+      renameClass: (from, to) => {
+        if (!from || from === to) return;
+        set((s) => ({
+          registers: s.registers.map((r) => (r.className === from ? { ...r, className: to } : r)),
+          assessments: s.assessments.map((a) => (a.className === from ? { ...a, className: to } : a)),
+          assignments: s.assignments.map((a) => (a.className === from ? { ...a, className: to } : a)),
+        }));
       },
     })
 );
