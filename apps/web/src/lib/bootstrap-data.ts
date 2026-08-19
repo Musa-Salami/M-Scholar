@@ -20,6 +20,7 @@ import type {
   TeacherNote,
   TermResult,
 } from "@m-scholar/shared";
+import { DEMO_USERS } from "@m-scholar/shared";
 import {
   type AppSnapshot,
   type DataMode,
@@ -127,18 +128,32 @@ function emptySnapshot(settings?: SchoolSettings): AppSnapshot {
 function stripDemoSeeds(snapshot: AppSnapshot): AppSnapshot {
   const students = withoutDemo<Student>(snapshot.finance.students, DEMO_IDS.students);
   const studentIds = new Set(students.map((s) => s.id));
-  const classes = withoutDemo<SchoolClass>(snapshot.school.classes, DEMO_IDS.classes);
+  const users = withoutDemo<SchoolUser>(snapshot.school.users, DEMO_IDS.users);
+  const userIds = new Set(users.map((u) => u.id));
+  const classes = withoutDemo<SchoolClass>(snapshot.school.classes, DEMO_IDS.classes).map((cls) => ({
+    ...cls,
+    teacherId: cls.teacherId && userIds.has(cls.teacherId) ? cls.teacherId : null,
+  }));
   const assessments = withoutDemo<Assessment>(snapshot.academic.assessments, DEMO_IDS.assessments);
   const assessmentIds = new Set(assessments.map((a) => a.id));
-  const threads = withoutDemo<MessageThread>(snapshot.comms.threads, DEMO_IDS.threads).filter(
-    (t) => !DEMO_IDS.students.has(t.studentId)
-  );
+  const threads = withoutDemo<MessageThread>(snapshot.comms.threads, DEMO_IDS.threads)
+    .filter((t) => studentIds.has(t.studentId))
+    .map((thread) => {
+      const student = students.find((s) => s.id === thread.studentId);
+      if (!student) return thread;
+      const cls = classes.find((c) => c.name.toLowerCase() === student.className.toLowerCase());
+      const teacher = users.find((u) => u.id === cls?.teacherId);
+      const teacherName = teacher?.name ?? "";
+      const subject = `${student.name} — ${student.className}`;
+      if (thread.teacherName === teacherName && thread.subject === subject) return thread;
+      return { ...thread, teacherName, subject };
+    });
   const threadIds = new Set(threads.map((t) => t.id));
 
   return {
     version: VAULT_VERSION,
     school: {
-      users: withoutDemo<SchoolUser>(snapshot.school.users, DEMO_IDS.users),
+      users,
       classes,
       settings: asSettings(snapshot.school.settings),
     },
@@ -177,7 +192,9 @@ function stripDemoSeeds(snapshot: AppSnapshot): AppSnapshot {
       ),
     },
     notifications: {
-      notifications: withoutDemo<AppNotification>(snapshot.notifications.notifications, DEMO_IDS.notifications),
+      notifications: withoutDemo<AppNotification>(snapshot.notifications.notifications, DEMO_IDS.notifications).filter(
+        (n) => !DEMO_USERS[n.userEmail.toLowerCase()]
+      ),
     },
   };
 }

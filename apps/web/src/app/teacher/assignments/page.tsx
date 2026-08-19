@@ -8,13 +8,14 @@ import { PageHeader } from "@/components/dashboard-ui";
 import { FormField, inputClass, selectClass, btnPrimary, btnSecondary } from "@/components/finance-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useAuthStore } from "@/lib/auth-store";
-import { useClassStudents } from "@/hooks/use-class-students";
-import { useAcademicStore, TEACHER_CLASS } from "@/lib/academic-store";
+import { useClassStudents, useAssignedClassName } from "@/hooks/use-class-students";
+import { useAcademicStore } from "@/lib/academic-store";
 
 export default function TeacherAssignmentsPage() {
   useRequireAuth(["class_teacher"]);
   const { user } = useAuthStore();
   const students = useClassStudents();
+  const className = useAssignedClassName();
   const assignmentsAll = useAcademicStore((s) => s.assignments);
   const assessments = useAcademicStore((s) => s.assessments);
   const addAssignment = useAcademicStore((s) => s.addAssignment);
@@ -22,12 +23,12 @@ export default function TeacherAssignmentsPage() {
     const fromClass = [
       ...new Set(
         (assessments ?? [])
-          .filter((a) => a.className === TEACHER_CLASS)
+          .filter((a) => a.className === className)
           .map((a) => a.subject)
       ),
     ].sort((a, b) => a.localeCompare(b));
     return fromClass.length ? fromClass : [...SUBJECTS];
-  }, [assessments]);
+  }, [assessments, className]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     subject: "",
@@ -37,16 +38,16 @@ export default function TeacherAssignmentsPage() {
   });
 
   const assignments = (assignmentsAll ?? [])
-    .filter((a) => a.className === TEACHER_CLASS)
+    .filter((a) => a.className === className)
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
   const today = new Date().toISOString().slice(0, 10);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !className) return;
     addAssignment(
       {
-        className: TEACHER_CLASS,
+        className: className,
         subject: form.subject || classSubjects[0] || "",
         title: form.title.trim(),
         details: form.details.trim(),
@@ -63,7 +64,7 @@ export default function TeacherAssignmentsPage() {
     <PortalShell navItems={TEACHER_NAV} title="Class Teacher Portal">
       <PageHeader
         title="Class assignments"
-        description={`Homework and due work for ${TEACHER_CLASS}. Parents and students see this on their dashboard.`}
+        description={`Homework and due work for ${className}. Parents and students see this on their dashboard.`}
         action={
           <button
             type="button"

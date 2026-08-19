@@ -7,14 +7,15 @@ import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/components/finance-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { useClassStudents } from "@/hooks/use-class-students";
-import { useAcademicStore, TEACHER_CLASS } from "@/lib/academic-store";
+import { useClassStudents, useAssignedClassName } from "@/hooks/use-class-students";
+import { useAcademicStore } from "@/lib/academic-store";
 import { obtainableMarks } from "@/lib/report-card";
 import { addNotification } from "@/lib/notification-store";
 
 export default function TeacherAssessmentsPage() {
   useRequireAuth(["class_teacher"]);
   const students = useClassStudents();
+  const className = useAssignedClassName();
   const assessments = useAcademicStore((s) => s.assessments);
   const scores = useAcademicStore((s) => s.scores);
   const termResults = useAcademicStore((s) => s.termResults);
@@ -28,12 +29,12 @@ export default function TeacherAssessmentsPage() {
     const names = [
       ...new Set(
         (assessments ?? [])
-          .filter((a) => a.className === TEACHER_CLASS)
+          .filter((a) => a.className === className)
           .map((a) => a.subject)
       ),
     ];
     return names.sort((a, b) => a.localeCompare(b));
-  }, [assessments]);
+  }, [assessments, className]);
 
   const [subject, setSubject] = useState<string>("");
   const [newSubject, setNewSubject] = useState("");
@@ -45,10 +46,10 @@ export default function TeacherAssessmentsPage() {
   const subjectAssessments = useMemo(
     () =>
       (assessments ?? [])
-        .filter((a) => a.className === TEACHER_CLASS && a.subject === activeSubject)
+        .filter((a) => a.className === className && a.subject === activeSubject)
         .slice()
         .sort((a, b) => assessmentSortIndex(a.name) - assessmentSortIndex(b.name)),
-    [assessments, activeSubject]
+    [assessments, activeSubject, className]
   );
 
   const classStudentIds = useMemo(() => students.map((s) => s.id), [students]);
@@ -60,7 +61,7 @@ export default function TeacherAssessmentsPage() {
     [termResults, classStudentIds, activeSubject]
   );
   const draftCount = classResults.filter((r) => r.status === "draft").length;
-  const marks = obtainableMarks(assessments ?? [], TEACHER_CLASS);
+  const marks = obtainableMarks(assessments ?? [], className);
 
   const showToast = (message: string) => {
     setError("");
@@ -84,7 +85,7 @@ export default function TeacherAssessmentsPage() {
 
   const handleCompute = () => {
     if (!activeSubject) return;
-    computeTermResults(TEACHER_CLASS, activeSubject, classStudentIds);
+    computeTermResults(className, activeSubject, classStudentIds);
     showToast(`Term results computed for ${activeSubject}.`);
   };
 
@@ -111,7 +112,8 @@ export default function TeacherAssessmentsPage() {
 
   const handleAddSubject = (e: React.FormEvent) => {
     e.preventDefault();
-    const result = addSubject(TEACHER_CLASS, newSubject);
+    if (!className) return;
+    const result = addSubject(className, newSubject);
     if (!result.ok) {
       setError(result.error ?? "Could not add subject.");
       return;
@@ -125,10 +127,10 @@ export default function TeacherAssessmentsPage() {
   const handleDeleteSubject = () => {
     if (!activeSubject) return;
     const confirmed = window.confirm(
-      `Delete ${activeSubject} from ${TEACHER_CLASS}? This removes CA1, CA2, Midterm, Exam, scores, and results for this class.`
+      `Delete ${activeSubject} from ${className}? This removes CA1, CA2, Midterm, Exam, scores, and results for this class.`
     );
     if (!confirmed) return;
-    const result = deleteSubject(TEACHER_CLASS, activeSubject, classStudentIds);
+    const result = deleteSubject(className, activeSubject, classStudentIds);
     if (!result.ok) {
       setError(result.error ?? "Could not delete subject.");
       return;

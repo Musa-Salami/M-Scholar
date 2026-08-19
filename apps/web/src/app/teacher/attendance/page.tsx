@@ -7,8 +7,8 @@ import { PageHeader } from "@/components/dashboard-ui";
 import { btnPrimary } from "@/components/finance-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useAuthStore } from "@/lib/auth-store";
-import { useClassStudents } from "@/hooks/use-class-students";
-import { useAcademicStore, TEACHER_CLASS } from "@/lib/academic-store";
+import { useClassStudents, useAssignedClassName } from "@/hooks/use-class-students";
+import { useAcademicStore } from "@/lib/academic-store";
 import { cn } from "@/lib/utils";
 
 const STATUSES: AttendanceStatus[] = ["present", "absent", "late", "excused"];
@@ -24,10 +24,11 @@ export default function TeacherAttendancePage() {
   useRequireAuth(["class_teacher"]);
   const { user } = useAuthStore();
   const students = useClassStudents();
+  const className = useAssignedClassName();
   const { getRegister, saveRegister, submitRegister } = useAcademicStore();
 
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const register = getRegister(TEACHER_CLASS, date);
+  const register = getRegister(className, date);
 
   const [marks, setMarks] = useState<Record<string, AttendanceStatus>>({});
 
@@ -49,7 +50,7 @@ export default function TeacherAttendancePage() {
 
   const handleSave = () => {
     saveRegister(
-      TEACHER_CLASS,
+      className,
       date,
       students.map((s) => ({ studentId: s.id, status: marks[s.id] ?? "present" })),
       user ? `${user.firstName} ${user.lastName}` : "Teacher"
@@ -58,7 +59,7 @@ export default function TeacherAttendancePage() {
 
   const handleSubmit = () => {
     handleSave();
-    const reg = getRegister(TEACHER_CLASS, date);
+    const reg = getRegister(className, date);
     if (!reg) return;
     const parentEmails: Record<string, string> = {};
     students.forEach((s) => { parentEmails[s.id] = s.parentEmail; });
@@ -69,7 +70,7 @@ export default function TeacherAttendancePage() {
 
   return (
     <PortalShell navItems={TEACHER_NAV} title="Class Teacher Portal">
-      <PageHeader title="Attendance Register" description={`${TEACHER_CLASS} — mark daily attendance.`} />
+      <PageHeader title="Attendance Register" description={`${className} — mark daily attendance.`} />
 
       <div className="card-shadow mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-slate-100 bg-white p-5">
         <div>

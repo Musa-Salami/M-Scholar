@@ -135,12 +135,14 @@ export const useCommsStore = create<CommsState>()((set, get) => ({
           createdAt: new Date().toISOString(),
         };
         set((s) => ({ messages: [...s.messages, message] }));
-        addNotification({
-          userEmail: notifyEmail,
-          title: `New message from ${msg.senderName}`,
-          body: msg.body.slice(0, 80),
-          href: msg.senderRole === "teacher" ? "/portal/messages" : "/teacher/messages",
-        });
+        if (notifyEmail.trim()) {
+          addNotification({
+            userEmail: notifyEmail,
+            title: `New message from ${msg.senderName}`,
+            body: msg.body.slice(0, 80),
+            href: msg.senderRole === "teacher" ? "/portal/messages" : "/teacher/messages",
+          });
+        }
       },
 
       getThreadForParent: (parentEmail) =>
@@ -150,17 +152,34 @@ export const useCommsStore = create<CommsState>()((set, get) => ({
         get().messages.filter((m) => m.threadId === threadId),
 
       getOrCreateThread: (studentId, parentEmail, teacherName, studentName, className) => {
-        const existing = get().threads.find(
-          (t) => t.studentId === studentId && t.parentEmail === parentEmail
-        );
-        if (existing) return existing;
+        const existing = get().threads.find((t) => t.studentId === studentId);
+        const subject = `${studentName} — ${className}`;
+        if (existing) {
+          if (
+            existing.teacherName === teacherName &&
+            existing.subject === subject &&
+            existing.parentEmail === parentEmail
+          ) {
+            return existing;
+          }
+          const updated: MessageThread = {
+            ...existing,
+            parentEmail: parentEmail || existing.parentEmail,
+            teacherName: teacherName || existing.teacherName,
+            subject,
+          };
+          set((s) => ({
+            threads: s.threads.map((t) => (t.id === existing.id ? updated : t)),
+          }));
+          return updated;
+        }
 
         const thread: MessageThread = {
           id: `t${Date.now()}`,
           studentId,
           parentEmail,
           teacherName,
-          subject: `${studentName} — ${className}`,
+          subject,
         };
         set((s) => ({ threads: [...s.threads, thread] }));
         return thread;

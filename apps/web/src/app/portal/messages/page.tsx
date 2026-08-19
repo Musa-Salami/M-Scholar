@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import { PORTAL_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
 import { PageHeader } from "@/components/dashboard-ui";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { useFinanceStore } from "@/lib/finance-store";
 import { studentLinkedToUser } from "@/lib/credentials";
+import { getClassTeacherForStudent, teacherNotifyAddress } from "@/lib/class-teacher";
 import { useCommsStore } from "@/lib/comms-store";
+import { useFinanceStore } from "@/lib/finance-store";
+import { useSchoolStore } from "@/lib/school-store";
 import { cn } from "@/lib/utils";
 
 export default function PortalMessagesPage() {
@@ -18,6 +20,8 @@ export default function PortalMessagesPage() {
   const messagesAll = useCommsStore((s) => s.messages ?? []);
   const sendMessage = useCommsStore((s) => s.sendMessage);
   const getOrCreateThread = useCommsStore((s) => s.getOrCreateThread);
+  const classes = useSchoolStore((s) => s.classes);
+  const schoolUsers = useSchoolStore((s) => s.users);
   const [body, setBody] = useState("");
   const [threadId, setThreadId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -26,32 +30,26 @@ export default function PortalMessagesPage() {
     ? studentsAll.filter((st) => studentLinkedToUser(st, user))
     : [];
   const student = students[0];
-  const existingThread = user
-    ? threads.find(
-        (t) =>
-          t.parentEmail === user.email ||
-          t.parentEmail === user.phone ||
-          t.studentId === student?.id
-      )
-    : undefined;
+  const classTeacher = useMemo(
+    () => getClassTeacherForStudent(student),
+    [student, classes, schoolUsers]
+  );
+  const teacherName = classTeacher?.name ?? "";
+  const existingThread = student ? threads.find((t) => t.studentId === student.id) : undefined;
   const activeThread = threads.find((t) => t.id === threadId) ?? existingThread;
   const messages = activeThread ? messagesAll.filter((m) => m.threadId === activeThread.id) : [];
 
   useEffect(() => {
-    if (!ready || !user || !student || threadId) return;
-    if (existingThread) {
-      setThreadId(existingThread.id);
-      return;
-    }
+    if (!ready || !user || !student || !classTeacher) return;
     const created = getOrCreateThread(
       student.id,
       student.parentEmail || user.email || user.phone || "",
-      "Emeka Nwosu",
+      classTeacher.name,
       student.name,
       student.className
     );
-    setThreadId(created.id);
-  }, [ready, user, student, threadId, existingThread, getOrCreateThread]);
+    setThreadId((current) => (current === created.id ? current : created.id));
+  }, [ready, user, student, classTeacher, getOrCreateThread]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -67,23 +65,32 @@ export default function PortalMessagesPage() {
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!body.trim() || !activeThread || !user) return;
+    if (!body.trim() || !activeThread || !user || !classTeacher) return;
+    const notify = teacherNotifyAddress(classTeacher);
     sendMessage(
       activeThread.id,
       { senderRole: "parent", senderName: `${user.firstName} ${user.lastName}`, body: body.trim() },
-      "teacher@mscholar.app"
+      notify
     );
     setBody("");
   };
 
+  const heading = classTeacher
+    ? `Chat with ${teacherName}`
+    : student
+      ? "No class teacher is assigned to this class yet."
+      : "Communicate with the class teacher.";
+
   return (
     <PortalShell navItems={PORTAL_NAV} title="Parent / Student Portal">
-      <PageHeader title="Messages" description={activeThread ? `Chat with ${activeThread.teacherName}` : "Communicate with the class teacher."} />
+      <PageHeader title="Messages" description={heading} />
 
       <div className="card-shadow flex h-[calc(100vh-220px)] min-h-[400px] flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white">
         <div className="border-b border-slate-100 px-4 py-3">
-          <p className="font-medium text-slate-900">{activeThread?.subject ?? "No thread"}</p>
-          <p className="text-xs text-slate-500">Class teacher: Emeka Nwosu</p>
+          <p className="font-medium text-slate-900">{activeThread?.subject ?? (student ? `${student.name} — ${student.className}` : "No thread")}</p>
+          <p className="text-xs text-slate-500">
+            Class teacher: {teacherName || "Not assigned"}
+          </p>
         </div>
         <div className="flex-1 overflow-auto p-4 space-y-3">
           {messages.map((m) => (
@@ -95,17 +102,23 @@ export default function PortalMessagesPage() {
           ))}
           <div ref={bottomRef} />
         </div>
-        <form onSubmit={handleSend} className="flex gap-2 border-t border-slate-100 p-4">
-          <input
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Message the class teacher…"
-            className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-sky-500"
-          />
-          <button type="submit" className="rounded-xl bg-sky-600 p-2.5 text-white hover:bg-sky-700">
-            <Send className="h-5 w-5" />
-          </button>
-        </form>
+        {classTeacher ? (
+          <form onSubmit={handleSend} className="flex gap-2 border-t border-slate-100 p-4">
+            <input
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder={`Message ${teacherName}…`}
+              className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-sky-500"
+            />
+            <button type="submit" className="rounded-xl bg-sky-600 p-2.5 text-white hover:bg-sky-700">
+              <Send className="h-5 w-5" />
+            </button>
+          </form>
+        ) : (
+          <p className="border-t border-slate-100 px-4 py-3 text-sm text-slate-500">
+            Ask the school admin to assign a class teacher on Classes before you can send a message.
+          </p>
+        )}
       </div>
     </PortalShell>
   );
