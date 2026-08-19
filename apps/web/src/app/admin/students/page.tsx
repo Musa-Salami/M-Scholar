@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Eye, Pencil, Plus, Trash2, X } from "lucide-react";
 import {
   ADMIN_NAV,
@@ -74,10 +75,12 @@ export default function AdminStudentsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [notice, setNotice] = useState("");
+  const [formError, setFormError] = useState("");
 
-  const classOptions = classes.length
-    ? classes.map((c) => c.name)
-    : ["Kindergarten", "Nursery 1", "Nursery 2", "Primary 1", "Primary 3"];
+  const classOptions = classes.map((c) => c.name);
+  const selectedClass =
+    classOptions.find((name) => name.toLowerCase() === form.className.trim().toLowerCase()) ?? "";
+  const classExists = Boolean(selectedClass);
   const readOnly = mode === "view";
 
   const generatedNo = useMemo(() => {
@@ -111,11 +114,15 @@ export default function AdminStudentsPage() {
     setMode("closed");
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setFormError("");
   };
 
   const openEnroll = () => {
+    if (!classOptions.length) return;
     setEditingId(null);
     setForm({ ...EMPTY_FORM, className: classOptions[0] ?? "" });
+    setFormError("");
+    setNotice("");
     setMode("enroll");
   };
 
@@ -135,10 +142,14 @@ export default function AdminStudentsPage() {
     e.preventDefault();
     if (mode === "view") return;
     if (mode === "enroll" && !generatedNo) return;
+    if (!classExists) {
+      setFormError("Choose a class that already exists. Create it on Classes first.");
+      return;
+    }
     const payload = {
       name: form.name.trim(),
       admissionNo: mode === "enroll" ? generatedNo : form.admissionNo,
-      className: form.className,
+      className: form.className.trim(),
       parentEmail: form.parentEmail.trim(),
       dateOfBirth: form.dateOfBirth,
       parentAddress: form.parentAddress.trim(),
@@ -151,11 +162,19 @@ export default function AdminStudentsPage() {
     if (mode === "edit" && editingId) {
       const existing = students.find((s) => s.id === editingId);
       const next = { ...payload, studentEmail: existing?.studentEmail };
-      updateStudent(editingId, next);
+      const result = updateStudent(editingId, next);
+      if (!result.ok) {
+        setFormError(result.error ?? "Could not update this pupil.");
+        return;
+      }
       syncStudentLogin({ id: editingId, ...next, studentEmail: existing?.studentEmail }, existing);
     } else {
-      addStudent(payload);
-      const enrolled = useFinanceStore.getState().students.find((s) => s.admissionNo === payload.admissionNo);
+      const result = addStudent(payload);
+      if (!result.ok) {
+        setFormError(result.error ?? "Could not enroll this pupil.");
+        return;
+      }
+      const enrolled = result.student ?? useFinanceStore.getState().students.find((s) => s.admissionNo === payload.admissionNo);
       if (enrolled) {
         const logins = ensureLoginsForEnrolment(enrolled);
         setNotice(
@@ -185,17 +204,27 @@ export default function AdminStudentsPage() {
     <PortalShell navItems={ADMIN_NAV} title="Super Admin Portal">
       <PageHeader
         title="Students"
-        description="Admission numbers are assigned automatically from class level, term, name initials, and year. A student portal login is created only when you enroll the pupil."
+        description="Admission numbers are assigned automatically from class level, term, name initials, and year. Assign only classes that already exist on Classes."
         action={
           <button
             onClick={openEnroll}
-            className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"
+            disabled={!classOptions.length}
+            className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Plus className="h-4 w-4" /> Enroll student
           </button>
         }
       />
 
+      {!classOptions.length && (
+        <div className="mb-4 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Create a class on{" "}
+          <Link href="/admin/classes/" className="font-semibold underline">
+            Classes
+          </Link>{" "}
+          before enrolling a pupil. A student cannot be assigned to a class that does not exist.
+        </div>
+      )}
       {notice && <div className="mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
 
       {mode !== "closed" && (
@@ -206,6 +235,7 @@ export default function AdminStudentsPage() {
               <X className="h-4 w-4" />
             </button>
           </div>
+          {formError && <p className="mb-4 text-sm text-red-600">{formError}</p>}
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label="Full name">
               <input className={fieldClass} value={form.name} disabled={readOnly} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="Musa Ismaila Salami" />
@@ -223,12 +253,29 @@ export default function AdminStudentsPage() {
               <input type="date" className={fieldClass} value={form.dateOfBirth} disabled={readOnly} onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })} required />
             </FormField>
             <FormField label="Class">
-              <select className={fieldClass} value={form.className} disabled={readOnly} onChange={(e) => setForm({ ...form, className: e.target.value })} required>
+              <select
+                className={fieldClass}
+                value={selectedClass}
+                disabled={readOnly || !classOptions.length}
+                onChange={(e) => {
+                  setForm({ ...form, className: e.target.value });
+                  setFormError("");
+                }}
+                required
+              >
+                <option value="">{classOptions.length ? "Select a class" : "No classes yet"}</option>
                 {classOptions.map((c) => (
-                  <option key={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
-              {mode === "enroll" && form.className && !levelOk && (
+              {mode !== "view" && form.className && !classExists && (
+                <p className="mt-1 text-xs text-amber-700">
+                  {form.className} is not on the class list. Choose an existing class, or create it on Classes first.
+                </p>
+              )}
+              {mode === "enroll" && form.className && classExists && !levelOk && (
                 <p className="mt-1 text-xs text-amber-700">
                   Class name should start with Kindergarten, Nursery, or Primary so the admission number can be generated.
                 </p>
@@ -312,7 +359,7 @@ export default function AdminStudentsPage() {
               <>
                 <button
                   type="submit"
-                  disabled={mode === "enroll" && !generatedNo}
+                  disabled={(mode === "enroll" && !generatedNo) || !classExists}
                   className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-60"
                 >
                   {mode === "edit" ? "Save changes" : "Enroll"}

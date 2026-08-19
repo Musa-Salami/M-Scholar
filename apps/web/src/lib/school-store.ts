@@ -285,3 +285,9 @@ export const useSchoolStore = create<SchoolState>()((set, get) => ({
     }));
   },
 }));
+
+export function findSchoolClass(className: string) {
+  const name = className.trim();
+  if (!name) return undefined;
+  return useSchoolStore.getState().classes.find((c) => c.name.toLowerCase() === name.toLowerCase());
+}

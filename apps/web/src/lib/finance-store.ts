@@ -15,6 +15,7 @@ import type {
   StaffMember,
   Student,
 } from "@m-scholar/shared";
+import { findSchoolClass } from "@/lib/school-store";
 
 const SESSION = "2026/2027";
 const TERM = "First Term";
@@ -308,8 +309,8 @@ interface FinanceState {
   receiptSeq: number;
 
   addFeeStructure: (data: Omit<FeeStructure, "id" | "totalAmount">) => void;
-  addStudent: (data: Omit<Student, "id">) => void;
-  updateStudent: (id: string, data: Omit<Student, "id">) => void;
+  addStudent: (data: Omit<Student, "id">) => { ok: boolean; error?: string; student?: Student };
+  updateStudent: (id: string, data: Omit<Student, "id">) => { ok: boolean; error?: string };
   deleteStudent: (id: string) => void;
   renameClass: (from: string, to: string) => void;
   resetToDemo: () => void;
@@ -395,15 +396,24 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
         }),
 
       addStudent: (data) => {
-        set((s) => ({
-          students: [...s.students, { ...data, id: `s${Date.now()}` }],
-        }));
+        const cls = findSchoolClass(data.className);
+        if (!cls) {
+          return { ok: false, error: "Choose a class that already exists. Create it on Classes first." };
+        }
+        const student: Student = { ...data, className: cls.name, id: `s${Date.now()}` };
+        set((s) => ({ students: [...s.students, student] }));
+        return { ok: true, student };
       },
 
       updateStudent: (id, data) => {
+        const cls = findSchoolClass(data.className);
+        if (!cls) {
+          return { ok: false, error: "Choose a class that already exists. Create it on Classes first." };
+        }
         set((s) => ({
-          students: s.students.map((st) => (st.id === id ? { ...st, ...data } : st)),
+          students: s.students.map((st) => (st.id === id ? { ...st, ...data, className: cls.name } : st)),
         }));
+        return { ok: true };
       },
 
       deleteStudent: (id) => {
