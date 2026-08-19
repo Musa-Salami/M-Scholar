@@ -19,12 +19,12 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-brand/10 bg-white/95 backdrop-blur-md">
       <div className="gold-rule" />
-      <div className="mx-auto flex min-w-0 max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:px-4 md:px-6">
-        <Link href="/" className="flex min-h-11 min-w-0 items-center gap-2 sm:gap-3">
-          <BrandLogo size={64} className="h-14 w-14 shrink-0 sm:h-16 sm:w-16" />
+      <div className="mx-auto flex min-w-0 max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:px-4 sm:py-3.5 md:px-6">
+        <Link href="/" className="flex min-h-11 min-w-0 items-center gap-2.5 sm:gap-3.5">
+          <BrandLogo size={96} className="h-16 w-16 shrink-0 sm:h-20 sm:w-20 md:h-24 md:w-24" />
           <div className="min-w-0">
-            <p className="truncate font-display text-xs font-semibold leading-tight text-brand sm:text-sm">{SCHOOL.shortName}</p>
-            <p className="hidden max-w-[16rem] truncate text-[11px] leading-snug text-muted sm:block">{SCHOOL.motto}</p>
+            <p className="truncate font-display text-sm font-semibold leading-tight text-brand sm:text-base md:text-lg">{SCHOOL.shortName}</p>
+            <p className="mt-0.5 hidden max-w-[18rem] truncate text-xs leading-snug text-muted sm:block md:max-w-[22rem] md:text-sm">{SCHOOL.motto}</p>
           </div>
         </Link>
 
