@@ -1,4 +1,5 @@
 import type { Assessment } from "@m-scholar/shared";
+import { isExamAssessment } from "@m-scholar/shared";
 
 export function obtainableMarks(assessments: Assessment[], className?: string) {
   const list = assessments.filter((a) => !className || a.className === className);
@@ -10,7 +11,7 @@ export function obtainableMarks(assessments: Assessment[], className?: string) {
       0,
       ...subjects.map((subject) =>
         list
-          .filter((a) => a.subject === subject && !/exam/i.test(a.name))
+          .filter((a) => a.subject === subject && !isExamAssessment(a.name))
           .reduce((sum, a) => sum + a.maxScore, 0)
       )
     ) || 40;
@@ -18,7 +19,7 @@ export function obtainableMarks(assessments: Assessment[], className?: string) {
     Math.max(
       0,
       ...subjects.map(
-        (subject) => list.find((a) => a.subject === subject && /exam/i.test(a.name))?.maxScore ?? 0
+        (subject) => list.find((a) => a.subject === subject && isExamAssessment(a.name))?.maxScore ?? 0
       )
     ) || 60;
 

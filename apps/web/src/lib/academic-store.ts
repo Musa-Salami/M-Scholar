@@ -9,31 +9,34 @@ import type {
   ClassAssignment,
   TermResult,
 } from "@m-scholar/shared";
-import { SUBJECTS, computeGrade } from "@m-scholar/shared";
+import { SUBJECTS, computeGrade, ASSESSMENT_COMPONENTS, isExamAssessment } from "@m-scholar/shared";
 import { addNotification } from "@/lib/notification-store";
 
 const TEACHER_CLASS = "Primary 1";
 const TERM = "First Term";
 
 const SEED_ASSESSMENTS: Assessment[] = [
-  { id: "a1", className: TEACHER_CLASS, subject: "Mathematics", name: "CA1", maxScore: 20, weightPercent: 10, term: TERM },
-  { id: "a2", className: TEACHER_CLASS, subject: "Mathematics", name: "CA2", maxScore: 20, weightPercent: 10, term: TERM },
-  { id: "a3", className: TEACHER_CLASS, subject: "Mathematics", name: "Exam", maxScore: 60, weightPercent: 80, term: TERM },
-  { id: "a4", className: TEACHER_CLASS, subject: "English", name: "CA1", maxScore: 20, weightPercent: 10, term: TERM },
-  { id: "a5", className: TEACHER_CLASS, subject: "English", name: "Exam", maxScore: 60, weightPercent: 80, term: TERM },
+  { id: "a1", className: TEACHER_CLASS, subject: "Mathematics", name: "CA1", maxScore: 10, weightPercent: 10, term: TERM },
+  { id: "a2", className: TEACHER_CLASS, subject: "Mathematics", name: "CA2", maxScore: 10, weightPercent: 10, term: TERM },
+  { id: "a3", className: TEACHER_CLASS, subject: "Mathematics", name: "Midterm", maxScore: 20, weightPercent: 20, term: TERM },
+  { id: "a6", className: TEACHER_CLASS, subject: "Mathematics", name: "Exam", maxScore: 60, weightPercent: 60, term: TERM },
+  { id: "a4", className: TEACHER_CLASS, subject: "English", name: "CA1", maxScore: 10, weightPercent: 10, term: TERM },
+  { id: "a5", className: TEACHER_CLASS, subject: "English", name: "CA2", maxScore: 10, weightPercent: 10, term: TERM },
+  { id: "a7", className: TEACHER_CLASS, subject: "English", name: "Midterm", maxScore: 20, weightPercent: 20, term: TERM },
+  { id: "a8", className: TEACHER_CLASS, subject: "English", name: "Exam", maxScore: 60, weightPercent: 60, term: TERM },
 ];
 
 const SEED_SCORES: AssessmentScore[] = [
-  { id: "sc1", assessmentId: "a1", studentId: "s1", score: 16 },
-  { id: "sc2", assessmentId: "a1", studentId: "s2", score: 14 },
-  { id: "sc3", assessmentId: "a2", studentId: "s1", score: 18 },
-  { id: "sc4", assessmentId: "a2", studentId: "s2", score: 15 },
+  { id: "sc1", assessmentId: "a1", studentId: "s1", score: 8 },
+  { id: "sc2", assessmentId: "a1", studentId: "s2", score: 7 },
+  { id: "sc3", assessmentId: "a2", studentId: "s1", score: 9 },
+  { id: "sc4", assessmentId: "a2", studentId: "s2", score: 7 },
 ];
 
 const SEED_RESULTS: TermResult[] = [
-  { id: "r1", studentId: "s1", subject: "Mathematics", caScore: 34, examScore: 52, totalScore: 86, grade: "A", term: TERM, status: "published", publishedAt: "2026-02-01" },
+  { id: "r1", studentId: "s1", subject: "Mathematics", caScore: 17, examScore: 52, totalScore: 69, grade: "B", term: TERM, status: "published", publishedAt: "2026-02-01" },
   { id: "r2", studentId: "s1", subject: "English", caScore: 28, examScore: 45, totalScore: 73, grade: "A", term: TERM, status: "published", publishedAt: "2026-02-01" },
-  { id: "r3", studentId: "s2", subject: "Mathematics", caScore: 29, examScore: 40, totalScore: 69, grade: "B", term: TERM, status: "draft" },
+  { id: "r3", studentId: "s2", subject: "Mathematics", caScore: 14, examScore: 40, totalScore: 54, grade: "C", term: TERM, status: "draft" },
 ];
 
 const SEED_ASSIGNMENTS: ClassAssignment[] = [
@@ -84,9 +87,16 @@ interface AcademicState {
   saveRegister: (className: string, date: string, records: { studentId: string; status: AttendanceStatus; note?: string }[], takenBy: string) => void;
   submitRegister: (registerId: string, parentEmails: Record<string, string>) => void;
 
-  setScore: (assessmentId: string, studentId: string, score: number) => void;
-  computeTermResults: (className: string, subject: string) => void;
+  setScore: (assessmentId: string, studentId: string, score: number) => { ok: boolean; error?: string };
+  computeTermResults: (className: string, subject: string, studentIds?: string[]) => void;
   publishResults: (studentIds: string[], parentEmails: Record<string, string>) => void;
+  setResultStatus: (
+    resultId: string,
+    status: "draft" | "published",
+    actor: "super_admin" | "class_teacher"
+  ) => { ok: boolean; error?: string };
+  addSubject: (className: string, subject: string) => { ok: boolean; error?: string };
+  deleteSubject: (className: string, subject: string, studentIds: string[]) => { ok: boolean; error?: string };
   addAssignment: (data: Omit<ClassAssignment, "id" | "createdAt">, parentEmails: string[]) => void;
 
   getScoresForAssessment: (assessmentId: string) => AssessmentScore[];
@@ -182,7 +192,19 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
 
       setScore: (assessmentId, studentId, score) => {
         const assessment = get().assessments.find((a) => a.id === assessmentId);
-        if (!assessment || score < 0 || score > assessment.maxScore) return;
+        if (!assessment || score < 0 || score > assessment.maxScore) {
+          return { ok: false, error: "Enter a mark within the allowed range." };
+        }
+        const published = get().termResults.find(
+          (r) =>
+            r.studentId === studentId &&
+            r.subject === assessment.subject &&
+            r.term === (assessment.term || TERM) &&
+            r.status === "published"
+        );
+        if (published) {
+          return { ok: false, error: "This result is published. Ask the super admin to return it to draft before you edit." };
+        }
 
         const existing = get().scores.find(
           (s) => s.assessmentId === assessmentId && s.studentId === studentId
@@ -195,19 +217,34 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
               )
             : [...s.scores, { id: `sc${Date.now()}`, assessmentId, studentId, score }],
         }));
+        return { ok: true };
       },
 
-      computeTermResults: (className, subject) => {
+      computeTermResults: (className, subject, studentIds) => {
         const subjectAssessments = get().assessments.filter(
           (a) => a.className === className && a.subject === subject
         );
-        const exam = subjectAssessments.find((a) => a.name === "Exam");
-        const cas = subjectAssessments.filter((a) => a.name !== "Exam");
+        const exam = subjectAssessments.find((a) => isExamAssessment(a.name));
+        const cas = subjectAssessments.filter((a) => !isExamAssessment(a.name));
         if (!exam) return;
 
-        const studentIds = new Set(get().scores.map((s) => s.studentId));
+        const ids =
+          studentIds && studentIds.length > 0
+            ? studentIds
+            : [
+                ...new Set(
+                  get()
+                    .scores.filter((s) => subjectAssessments.some((a) => a.id === s.assessmentId))
+                    .map((s) => s.studentId)
+                ),
+              ];
 
-        studentIds.forEach((studentId) => {
+        ids.forEach((studentId) => {
+          const existing = get().termResults.find(
+            (r) => r.studentId === studentId && r.subject === subject && r.term === TERM
+          );
+          if (existing?.status === "published") return;
+
           const caTotal = cas.reduce((sum, ca) => {
             const sc = get().scores.find(
               (s) => s.assessmentId === ca.id && s.studentId === studentId
@@ -220,15 +257,8 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
               (s) => s.assessmentId === exam.id && s.studentId === studentId
             )?.score ?? 0;
 
-          const caMax = cas.reduce((s, c) => s + c.maxScore, 0);
-          const caPercent = caMax > 0 ? (caTotal / caMax) * 20 : 0;
-          const examPercent = (examScore / exam.maxScore) * 80;
-          const totalScore = Math.round(caPercent + examPercent);
+          const totalScore = Math.round(caTotal + examScore);
           const grade = computeGrade(totalScore);
-
-          const existing = get().termResults.find(
-            (r) => r.studentId === studentId && r.subject === subject && r.term === TERM
-          );
 
           const result: TermResult = {
             id: existing?.id ?? `r${Date.now()}-${studentId}-${subject}`,
@@ -271,6 +301,65 @@ export const useAcademicStore = create<AcademicState>()((set, get) => ({
             });
           }
         });
+      },
+
+      setResultStatus: (resultId, status, actor) => {
+        const current = get().termResults.find((r) => r.id === resultId);
+        if (!current) return { ok: false, error: "Result not found." };
+        if (actor === "class_teacher" && current.status === "published" && status === "draft") {
+          return { ok: false, error: "Only the super admin can return a published result to draft." };
+        }
+        set((s) => ({
+          termResults: s.termResults.map((r) =>
+            r.id === resultId
+              ? {
+                  ...r,
+                  status,
+                  publishedAt: status === "published" ? new Date().toISOString().slice(0, 10) : undefined,
+                }
+              : r
+          ),
+        }));
+        return { ok: true };
+      },
+
+      addSubject: (className, subject) => {
+        const name = subject.trim();
+        if (!name) return { ok: false, error: "Enter a subject name." };
+        const exists = get().assessments.some(
+          (a) => a.className === className && a.subject.toLowerCase() === name.toLowerCase()
+        );
+        if (exists) return { ok: false, error: "That subject is already on this class." };
+        const stamp = Date.now();
+        const created: Assessment[] = ASSESSMENT_COMPONENTS.map((component, index) => ({
+          id: `a${stamp}-${index}`,
+          className,
+          subject: name,
+          name: component.name,
+          maxScore: component.maxScore,
+          weightPercent: component.weightPercent,
+          term: TERM,
+        }));
+        set((s) => ({ assessments: [...s.assessments, ...created] }));
+        return { ok: true };
+      },
+
+      deleteSubject: (className, subject, studentIds) => {
+        const ids = new Set(
+          get()
+            .assessments.filter((a) => a.className === className && a.subject === subject)
+            .map((a) => a.id)
+        );
+        if (ids.size === 0) return { ok: false, error: "Subject not found on this class." };
+        const classStudentIds = new Set(studentIds);
+        set((s) => ({
+          assessments: s.assessments.filter((a) => !ids.has(a.id)),
+          scores: s.scores.filter((sc) => !ids.has(sc.assessmentId)),
+          termResults: s.termResults.filter(
+            (r) => !(r.subject === subject && classStudentIds.has(r.studentId))
+          ),
+        }));
+        return { ok: true };
       },
 
       addAssignment: (data, parentEmails) => {

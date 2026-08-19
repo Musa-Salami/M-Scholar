@@ -62,7 +62,7 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
       ["Next term resumes", resumption],
     ]);
     pdf.table(
-      ["Subject", `CA (${marks.ca})`, `Exam (${marks.exam})`, `Total (${marks.total})`, "Grade"],
+      ["Subject", `CA / Midterm (${marks.ca})`, `Exam (${marks.exam})`, `Total (${marks.total})`, "Grade"],
       results.map((r: TermResult) => [
         r.subject,
         String(r.caScore),
@@ -115,7 +115,7 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
             <thead>
               <tr>
                 <th className="border border-slate-200 bg-slate-50 px-2 py-2 text-left">Subject</th>
-                <th className="border border-slate-200 bg-slate-50 px-2 py-2 text-left">CA ({marks.ca})</th>
+                <th className="border border-slate-200 bg-slate-50 px-2 py-2 text-left">CA / Midterm ({marks.ca})</th>
                 <th className="border border-slate-200 bg-slate-50 px-2 py-2 text-left">Exam ({marks.exam})</th>
                 <th className="border border-slate-200 bg-slate-50 px-2 py-2 text-left">Total ({marks.total})</th>
                 <th className="border border-slate-200 bg-slate-50 px-2 py-2 text-left">Grade</th>

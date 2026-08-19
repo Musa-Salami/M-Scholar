@@ -115,6 +115,24 @@ export const SUBJECTS = [
   "Creative Arts",
 ] as const;
 
+export const ASSESSMENT_COMPONENTS = [
+  { name: "CA1", maxScore: 10, weightPercent: 10 },
+  { name: "CA2", maxScore: 10, weightPercent: 10 },
+  { name: "Midterm", maxScore: 20, weightPercent: 20 },
+  { name: "Exam", maxScore: 60, weightPercent: 60 },
+] as const;
+
+export const ASSESSMENT_ORDER = ["CA1", "CA2", "Midterm", "Exam"] as const;
+
+export function assessmentSortIndex(name: string) {
+  const index = ASSESSMENT_ORDER.indexOf(name as (typeof ASSESSMENT_ORDER)[number]);
+  return index === -1 ? ASSESSMENT_ORDER.length : index;
+}
+
+export function isExamAssessment(name: string) {
+  return /^exam$/i.test(name.trim());
+}
+
 export function computeGrade(total: number): string {
   if (total >= 70) return "A";
   if (total >= 60) return "B";

@@ -65,7 +65,7 @@ export default function PortalResultsPage() {
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                 <tr>
                   <th className="px-6 py-3">Subject</th>
-                  <th className="px-6 py-3">CA ({marks.ca})</th>
+                  <th className="px-6 py-3">CA / Midterm ({marks.ca})</th>
                   <th className="px-6 py-3">Exam ({marks.exam})</th>
                   <th className="px-6 py-3">Total ({marks.total})</th>
                   <th className="px-6 py-3">Grade</th>

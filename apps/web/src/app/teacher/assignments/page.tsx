@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { SUBJECTS, TEACHER_NAV } from "@m-scholar/shared";
 import { PortalShell } from "@/components/portal-shell";
@@ -16,10 +16,21 @@ export default function TeacherAssignmentsPage() {
   const { user } = useAuthStore();
   const students = useClassStudents();
   const assignmentsAll = useAcademicStore((s) => s.assignments);
+  const assessments = useAcademicStore((s) => s.assessments);
   const addAssignment = useAcademicStore((s) => s.addAssignment);
+  const classSubjects = useMemo(() => {
+    const fromClass = [
+      ...new Set(
+        (assessments ?? [])
+          .filter((a) => a.className === TEACHER_CLASS)
+          .map((a) => a.subject)
+      ),
+    ].sort((a, b) => a.localeCompare(b));
+    return fromClass.length ? fromClass : [...SUBJECTS];
+  }, [assessments]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
-    subject: SUBJECTS[0] as string,
+    subject: "",
     title: "",
     details: "",
     dueDate: "",
@@ -36,7 +47,7 @@ export default function TeacherAssignmentsPage() {
     addAssignment(
       {
         className: TEACHER_CLASS,
-        subject: form.subject,
+        subject: form.subject || classSubjects[0] || "",
         title: form.title.trim(),
         details: form.details.trim(),
         dueDate: form.dueDate,
@@ -44,7 +55,7 @@ export default function TeacherAssignmentsPage() {
       },
       students.map((s) => s.parentEmail)
     );
-    setForm({ subject: SUBJECTS[0], title: "", details: "", dueDate: "" });
+    setForm({ subject: classSubjects[0] ?? "", title: "", details: "", dueDate: "" });
     setShowForm(false);
   };
 
@@ -54,7 +65,14 @@ export default function TeacherAssignmentsPage() {
         title="Class assignments"
         description={`Homework and due work for ${TEACHER_CLASS}. Parents and students see this on their dashboard.`}
         action={
-          <button type="button" onClick={() => setShowForm(true)} className={`inline-flex items-center gap-2 ${btnPrimary}`}>
+          <button
+            type="button"
+            onClick={() => {
+              setForm((current) => ({ ...current, subject: current.subject || classSubjects[0] || "" }));
+              setShowForm(true);
+            }}
+            className={`inline-flex items-center gap-2 ${btnPrimary}`}
+          >
             <Plus className="h-4 w-4" /> New assignment
           </button>
         }
@@ -66,11 +84,14 @@ export default function TeacherAssignmentsPage() {
             <FormField label="Subject">
               <select
                 className={selectClass}
-                value={form.subject}
+                value={form.subject || classSubjects[0] || ""}
                 onChange={(e) => setForm({ ...form, subject: e.target.value })}
                 required
               >
-                {SUBJECTS.map((subject) => (
+                {(form.subject && !classSubjects.includes(form.subject)
+                  ? [form.subject, ...classSubjects]
+                  : classSubjects
+                ).map((subject) => (
                   <option key={subject}>{subject}</option>
                 ))}
               </select>
