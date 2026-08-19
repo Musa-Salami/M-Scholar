@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Source_Sans_3 } from "next/font/google";
+import { PressHighlight } from "@/components/press-highlight";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -24,6 +25,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#1A1464",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
@@ -34,6 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${sourceSans.variable} ${fraunces.variable} antialiased`}>
+        <PressHighlight />
         {children}
       </body>
     </html>

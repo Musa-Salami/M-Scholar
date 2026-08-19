@@ -6,7 +6,7 @@ import { pageHref, telHref, mailtoHref, whatsappHref } from "@/lib/paths";
 
 export default function AdmissionsPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:py-16 md:px-6">
       <p className="text-sm font-semibold uppercase tracking-widest text-gold">Limited spaces available</p>
       <h1 className="mt-2 font-display text-4xl font-semibold text-brand">Admissions</h1>
       <p className="mt-2 text-lg text-muted">{SCHOOL.session} academic session — now open</p>
@@ -61,7 +61,7 @@ export default function AdmissionsPage() {
             alt={`${SCHOOL.name} admission flyer for ${SCHOOL.session}`}
             width={720}
             height={960}
-            className="w-full rounded-2xl border border-border object-cover"
+            className="h-auto w-full rounded-2xl border border-border object-cover"
           />
           <div className="card-shadow rounded-2xl border border-gold/40 bg-cream p-6">
             <h3 className="font-display font-semibold text-brand">Register today</h3>

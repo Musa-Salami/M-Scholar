@@ -19,12 +19,12 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-brand/10 bg-white/95 backdrop-blur-md">
       <div className="gold-rule" />
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6">
-        <Link href="/" className="flex min-h-11 items-center gap-3">
-          <BrandLogo size={48} />
-          <div className="hidden sm:block">
-            <p className="font-display text-sm font-semibold leading-tight text-brand">{SCHOOL.shortName}</p>
-            <p className="max-w-[14rem] text-[11px] leading-snug text-muted">{SCHOOL.motto}</p>
+      <div className="mx-auto flex min-w-0 max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:px-4 md:px-6">
+        <Link href="/" className="flex min-h-11 min-w-0 items-center gap-2 sm:gap-3">
+          <BrandLogo size={44} className="shrink-0 sm:h-12 sm:w-12" />
+          <div className="min-w-0">
+            <p className="truncate font-display text-xs font-semibold leading-tight text-brand sm:text-sm">{SCHOOL.shortName}</p>
+            <p className="hidden max-w-[16rem] truncate text-[11px] leading-snug text-muted sm:block">{SCHOOL.motto}</p>
           </div>
         </Link>
 
@@ -68,14 +68,15 @@ export function SiteHeader() {
           ) : (
             <Link
               href="/login/"
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-dark"
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-dark sm:px-4 sm:py-2.5"
             >
               <LayoutDashboard className="h-4 w-4" />
-              School Portal
+              <span className="sm:hidden">Portal</span>
+              <span className="hidden sm:inline">School Portal</span>
             </Link>
           )}
 
-          <button type="button" className="rounded-lg p-2 lg:hidden" aria-label="Open menu" onClick={() => setMobileOpen(true)}>
+          <button type="button" className="min-h-11 min-w-11 shrink-0 rounded-lg p-2 lg:hidden" aria-label="Open menu" onClick={() => setMobileOpen(true)}>
             <Menu className="h-5 w-5" />
           </button>
         </div>
@@ -84,7 +85,7 @@ export function SiteHeader() {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute right-0 top-0 flex h-full w-72 flex-col bg-white shadow-xl">
+          <aside className="absolute right-0 top-0 flex h-full w-[min(18rem,92vw)] flex-col bg-white shadow-xl">
             <div className="flex items-center justify-between border-b p-4">
               <span className="font-display font-bold text-brand">Menu</span>
               <button type="button" aria-label="Close menu" onClick={() => setMobileOpen(false)}>

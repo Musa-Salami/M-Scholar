@@ -6,7 +6,7 @@ import { pageHref } from "@/lib/paths";
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:py-16 md:px-6">
       <p className="text-sm font-semibold uppercase tracking-widest text-gold">About us</p>
       <h1 className="mt-2 font-display text-4xl font-semibold text-brand">{SCHOOL.name}</h1>
       <p className="mt-3 max-w-2xl text-lg text-muted">{SCHOOL.motto}</p>
@@ -17,7 +17,7 @@ export default function AboutPage() {
           alt="Pupils and staff gathered at M-Scholars' Academy"
           width={1200}
           height={700}
-          className="h-64 w-full object-cover md:h-96"
+          className="h-48 w-full object-cover sm:h-64 md:h-96"
         />
       </div>
 

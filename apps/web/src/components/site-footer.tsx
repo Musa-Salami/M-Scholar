@@ -10,10 +10,10 @@ export function SiteFooter() {
       <div className="gold-rule" />
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 md:grid-cols-3 md:px-6">
         <div className="md:col-span-2">
-          <div className="flex items-center gap-3">
-            <BrandLogo size={56} />
-            <div>
-              <p className="font-display text-xl font-semibold text-white">{SCHOOL.name}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            <BrandLogo size={56} className="shrink-0" />
+            <div className="min-w-0">
+              <p className="font-display text-lg font-semibold text-white sm:text-xl">{SCHOOL.name}</p>
               <p className="text-sm text-gold">{SCHOOL.motto}</p>
             </div>
           </div>
@@ -30,7 +30,7 @@ export function SiteFooter() {
                 {SCHOOL.address}
               </a>
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <Phone className="h-4 w-4 shrink-0 text-gold" />
               <a href={telHref(SCHOOL.phone)} className="hover:text-white">
                 {SCHOOL.phone}

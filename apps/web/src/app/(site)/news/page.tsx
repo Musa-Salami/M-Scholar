@@ -13,7 +13,7 @@ const GALLERY = [
 
 export default function NewsPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:py-16 md:px-6">
       <h1 className="font-display text-4xl font-semibold text-brand">School life</h1>
       <p className="mt-2 max-w-2xl text-lg text-muted">
         Real moments from {SCHOOL.name} — recitation, class, and community in Ogaminana.
@@ -22,7 +22,7 @@ export default function NewsPage() {
       <div className="mt-12 grid gap-6 sm:grid-cols-2">
         {GALLERY.map(({ src, caption }) => (
           <figure key={src} className="card-shadow overflow-hidden rounded-2xl border border-border bg-white">
-            <Image src={src} alt={caption} width={900} height={640} className="h-64 w-full object-cover md:h-72" />
+            <Image src={src} alt={caption} width={900} height={640} sizes="(max-width: 640px) 100vw, 50vw" className="h-48 w-full object-cover sm:h-64 md:h-72" />
             <figcaption className="px-5 py-4 text-sm text-muted">{caption}</figcaption>
           </figure>
         ))}

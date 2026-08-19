@@ -4,7 +4,7 @@ import { pageHref } from "@/lib/paths";
 
 export default function AcademicsPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:py-16 md:px-6">
       <h1 className="font-display text-4xl font-semibold text-brand">Academics</h1>
       <p className="mt-2 max-w-2xl text-lg text-muted">
         Integrated Islamic and Western education from Kindergarten through Primary 5.

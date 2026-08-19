@@ -6,7 +6,7 @@ export default function ContactPage() {
   const enquire = `Assalamu alaikum. I would like to speak with ${SCHOOL.name}.`;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 md:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:py-16 md:px-6">
       <h1 className="font-display text-4xl font-semibold text-brand">Contact us</h1>
       <p className="mt-2 text-lg text-muted">Visit, call, or send a WhatsApp message.</p>
 
@@ -54,7 +54,7 @@ export default function ContactPage() {
             href={whatsappHref(SCHOOL.whatsapp, enquire)}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex min-h-11 items-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white hover:bg-brand-dark"
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-brand px-6 py-3 text-sm font-semibold text-white hover:bg-brand-dark sm:w-auto"
           >
             Message on WhatsApp
           </a>

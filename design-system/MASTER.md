@@ -26,7 +26,7 @@ Accessible institutional editorial. Soft depth, gold rules, cream paper. Not cla
 
 ## Effects
 
-Gold header/footer rule, 180–220ms hover, photo overlay hero. Honor `prefers-reduced-motion`.
+Gold header/footer rule, 160ms press highlight (gold ring + slight scale) on every control, photo overlay hero. Honor `prefers-reduced-motion`. Layout reflows from 375px.
 
 ## Avoid
 
