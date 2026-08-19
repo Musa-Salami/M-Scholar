@@ -93,7 +93,7 @@ export default function AdminDashboardPage() {
       />
       {mode === "demo" && (
         <div className="mb-6 rounded-2xl border-2 border-amber-400 bg-amber-100 px-4 py-3 text-sm font-semibold text-amber-950">
-          DEMO DATA is active. The 5 students, sample staff, and sample classes below are for illustration only.
+          DEMO DATA is active. The 5 pupils, 5 parent logins, 5 student logins, sample staff, and sample classes below are for illustration only.
           Choose <span className="underline">Load real data</span> to see what you have actually entered.
         </div>
       )}

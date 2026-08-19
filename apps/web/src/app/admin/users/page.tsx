@@ -28,12 +28,13 @@ const ROLE_SORT: Record<UserRole, number> = {
   account_officer: 4,
 };
 
-type UserGroup = "teachers" | "family" | "staff" | "all";
+type UserGroup = "teachers" | "parents" | "students" | "staff" | "all";
 
 function inGroup(role: UserRole, group: UserGroup) {
   if (group === "all") return true;
   if (group === "teachers") return role === "class_teacher";
-  if (group === "family") return role === "parent" || role === "student";
+  if (group === "parents") return role === "parent";
+  if (group === "students") return role === "student";
   return role === "super_admin" || role === "account_officer";
 }
 
@@ -60,7 +61,8 @@ export default function AdminUsersPage() {
     const list = users ?? [];
     return {
       teachers: list.filter((u) => u.role === "class_teacher").length,
-      family: list.filter((u) => u.role === "parent" || u.role === "student").length,
+      parents: list.filter((u) => u.role === "parent").length,
+      students: list.filter((u) => u.role === "student").length,
       staff: list.filter((u) => u.role === "super_admin" || u.role === "account_officer").length,
       all: list.length,
     };
@@ -141,7 +143,7 @@ export default function AdminUsersPage() {
     <PortalShell navItems={ADMIN_NAV} title="Super Admin Portal">
       <PageHeader
         title="User Management"
-        description="Set login details when you create a profile, then share them with the user. Staff use email. Parents and students use phone number."
+        description="Set login details when you create a profile, then share them with the user. Staff use email. Parents and students use phone number. Each enrolled pupil has a parent login and a student login."
         action={
           <button
             onClick={openForm}
@@ -283,7 +285,8 @@ export default function AdminUsersPage() {
             {(
               [
                 { id: "teachers", label: "Teachers" },
-                { id: "family", label: "Parent / Student" },
+                { id: "parents", label: "Parents" },
+                { id: "students", label: "Students" },
                 { id: "staff", label: "Admin & Finance" },
                 { id: "all", label: "All users" },
               ] as { id: UserGroup; label: string }[]

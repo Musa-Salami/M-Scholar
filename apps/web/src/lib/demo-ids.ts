@@ -1,6 +1,6 @@
 /** Sample-record ids. Real vaults must never keep these. */
 export const DEMO_IDS = {
-  users: new Set(["u1", "u2", "u3", "u4", "u5", "u6", "u7", "u8"]),
+  users: new Set(["u1", "u2", "u3", "u4", "u5", "u6", "u7", "u8", "u9", "u10", "u11", "u12", "u13", "u14", "u15", "u16"]),
   classes: new Set(["c1", "c2", "c3", "c4", "c5"]),
   students: new Set(["s1", "s2", "s3", "s4", "s5"]),
   feeStructures: new Set(["fs1", "fs2", "fs3"]),

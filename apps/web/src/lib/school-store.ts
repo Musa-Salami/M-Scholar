@@ -44,6 +44,14 @@ export const SEED_USERS: SchoolUser[] = [
   { id: "u6", name: "Grace Adeyemi", email: "grace.adeyemi@mscholar.app", phone: "", password: "teacher123", role: "class_teacher", status: "Active" },
   { id: "u7", name: "Fatima Bello", email: "parent@mscholar.app", phone: "+234 801 555 1042", password: "parent123", role: "parent", status: "Active" },
   { id: "u8", name: "Amina Bello", email: "student@mscholar.app", phone: "+234 809 555 1042", password: "student123", role: "student", status: "Active" },
+  { id: "u9", name: "Ngozi Okafor", email: "chidi.parent@email.com", phone: "+234 802 555 1043", password: "parent123", role: "parent", status: "Active" },
+  { id: "u10", name: "Hauwa Ibrahim", email: "zainab.parent@email.com", phone: "+234 803 555 1044", password: "parent123", role: "parent", status: "Active" },
+  { id: "u11", name: "Bola Adeyemi", email: "yusuf.parent@email.com", phone: "+234 804 555 1045", password: "parent123", role: "parent", status: "Active" },
+  { id: "u12", name: "Ifeoma Eze", email: "blessing.parent@email.com", phone: "+234 805 555 1046", password: "parent123", role: "parent", status: "Active" },
+  { id: "u13", name: "Chidi Okafor", email: "chidi.okafor@mscholar.app", phone: "+234 809 555 1043", password: "student123", role: "student", status: "Active" },
+  { id: "u14", name: "Zainab Ibrahim", email: "zainab.ibrahim@mscholar.app", phone: "+234 809 555 1044", password: "student123", role: "student", status: "Active" },
+  { id: "u15", name: "Yusuf Adeyemi", email: "yusuf.adeyemi@mscholar.app", phone: "+234 809 555 1045", password: "student123", role: "student", status: "Active" },
+  { id: "u16", name: "Blessing Eze", email: "blessing.eze@mscholar.app", phone: "+234 809 555 1046", password: "student123", role: "student", status: "Active" },
 ];
 
 export const SEED_CLASSES: SchoolClass[] = [
