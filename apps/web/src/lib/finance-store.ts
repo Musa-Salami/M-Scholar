@@ -17,7 +17,7 @@ import type {
   StaffMember,
   Student,
 } from "@m-scholar/shared";
-import { copyFeeItems } from "@m-scholar/shared";
+import { copyFeeItems, FEE_CATEGORIES } from "@m-scholar/shared";
 import { findSchoolClass } from "@/lib/school-store";
 
 const SESSION = "2026/2027";
@@ -148,6 +148,23 @@ function normalizeStudent(s: Student): Student {
     disability: s.disability ?? "None",
     allergy: s.allergy ?? "None",
   };
+}
+
+function mergeFeeCategories(stored: unknown, structures: FeeStructure[]): string[] {
+  const fromStored = Array.isArray(stored) && stored.length
+    ? stored.map((value) => String(value).trim()).filter(Boolean)
+    : [...FEE_CATEGORIES];
+  const used = structures.flatMap((structure) => structure.items.map((item) => item.category.trim()));
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const name of [...fromStored, ...used]) {
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(name);
+  }
+  return out.length ? out : [...FEE_CATEGORIES];
 }
 
 function snapshotFromStructure(structure: FeeStructure) {
@@ -328,6 +345,7 @@ interface FinanceState {
   expenditure: ExpenditureRecord[];
   staff: StaffMember[];
   payrollRuns: PayrollRun[];
+  feeCategories: string[];
   invoiceSeq: number;
   receiptSeq: number;
 
@@ -337,6 +355,9 @@ interface FinanceState {
     data: Omit<FeeStructure, "id" | "totalAmount">
   ) => { ok: boolean; error?: string };
   deleteFeeStructure: (id: string) => { ok: boolean; error?: string };
+  addFeeCategory: (name: string) => { ok: boolean; error?: string };
+  updateFeeCategory: (from: string, to: string) => { ok: boolean; error?: string };
+  deleteFeeCategory: (name: string) => { ok: boolean; error?: string };
   addStudent: (data: Omit<Student, "id">) => { ok: boolean; error?: string; student?: Student };
   updateStudent: (id: string, data: Omit<Student, "id">) => { ok: boolean; error?: string };
   deleteStudent: (id: string) => void;
@@ -351,6 +372,7 @@ interface FinanceState {
     expenditure: ExpenditureRecord[];
     staff: StaffMember[];
     payrollRuns: PayrollRun[];
+    feeCategories?: string[];
     invoiceSeq: number;
     receiptSeq: number;
   }) => void;
@@ -399,6 +421,7 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
       expenditure: SEED_EXPENDITURE,
       staff: SEED_STAFF,
       payrollRuns: [],
+      feeCategories: [...FEE_CATEGORIES],
       invoiceSeq: 6,
       receiptSeq: 5,
 
@@ -412,6 +435,7 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
           expenditure: SEED_EXPENDITURE,
           staff: SEED_STAFF,
           payrollRuns: [],
+          feeCategories: [...FEE_CATEGORIES],
           invoiceSeq: 6,
           receiptSeq: 5,
         }),
@@ -426,6 +450,7 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
           expenditure: data.expenditure ?? [],
           staff: data.staff ?? [],
           payrollRuns: data.payrollRuns ?? [],
+          feeCategories: mergeFeeCategories(data.feeCategories, data.feeStructures ?? []),
           invoiceSeq: data.invoiceSeq ?? 6,
           receiptSeq: data.receiptSeq ?? 5,
         }),
@@ -534,6 +559,49 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
             invoice.feeStructureId === id ? withInvoiceItems({ ...invoice, ...snap }, [current]) : invoice
           ),
         }));
+        return { ok: true };
+      },
+
+      addFeeCategory: (name) => {
+        const next = name.trim();
+        if (!next) return { ok: false, error: "Enter a fee item type." };
+        if (get().feeCategories.some((c) => c.toLowerCase() === next.toLowerCase())) {
+          return { ok: false, error: "That type already exists." };
+        }
+        set((s) => ({ feeCategories: [...s.feeCategories, next] }));
+        return { ok: true };
+      },
+
+      updateFeeCategory: (from, to) => {
+        const previous = from.trim();
+        const next = to.trim();
+        if (!previous) return { ok: false, error: "Choose a type to rename." };
+        if (!next) return { ok: false, error: "Enter a fee item type." };
+        const exists = get().feeCategories.some(
+          (c) => c.toLowerCase() === next.toLowerCase() && c.toLowerCase() !== previous.toLowerCase()
+        );
+        if (exists) return { ok: false, error: "That type already exists." };
+        const rename = (items?: FeeItem[]) =>
+          items?.map((item) => (item.category === previous ? { ...item, category: next } : item));
+        set((s) => ({
+          feeCategories: s.feeCategories.map((c) => (c === previous ? next : c)),
+          feeStructures: s.feeStructures.map((structure) => ({
+            ...structure,
+            items: rename(structure.items) ?? structure.items,
+          })),
+          invoices: s.invoices.map((invoice) => {
+            if (invoice.amountPaid > 0) return invoice;
+            const items = rename(invoice.items);
+            return items ? { ...invoice, items } : invoice;
+          }),
+        }));
+        return { ok: true };
+      },
+
+      deleteFeeCategory: (name) => {
+        const remaining = get().feeCategories.filter((c) => c !== name);
+        if (!remaining.length) return { ok: false, error: "Keep at least one fee item type." };
+        set({ feeCategories: remaining });
         return { ok: true };
       },
 

@@ -36,6 +36,7 @@ export interface AppSnapshot {
     expenditure: unknown[];
     staff: unknown[];
     payrollRuns: unknown[];
+    feeCategories?: unknown[];
     invoiceSeq: number;
     receiptSeq: number;
   };

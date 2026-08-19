@@ -21,7 +21,7 @@ import type {
   TeacherNote,
   TermResult,
 } from "@m-scholar/shared";
-import { DEMO_USERS } from "@m-scholar/shared";
+import { DEMO_USERS, FEE_CATEGORIES } from "@m-scholar/shared";
 import {
   type AppSnapshot,
   type DataMode,
@@ -108,6 +108,7 @@ function emptySnapshot(settings?: SchoolSettings): AppSnapshot {
       expenditure: [],
       staff: [],
       payrollRuns: [],
+      feeCategories: [...FEE_CATEGORIES],
       invoiceSeq: 1,
       receiptSeq: 1,
     },
@@ -183,6 +184,7 @@ function stripDemoSeeds(snapshot: AppSnapshot): AppSnapshot {
           (!m.appointmentId || appointmentIds.has(m.appointmentId))
       ),
       payrollRuns: asArray<PayrollRun>(snapshot.finance.payrollRuns),
+      feeCategories: asArray<string>(snapshot.finance.feeCategories),
       invoiceSeq: snapshot.finance.invoiceSeq ?? 1,
       receiptSeq: snapshot.finance.receiptSeq ?? 1,
     },
@@ -302,6 +304,7 @@ function collectSnapshot(): AppSnapshot {
       expenditure: finance.expenditure,
       staff: finance.staff,
       payrollRuns: finance.payrollRuns,
+      feeCategories: finance.feeCategories,
       invoiceSeq: finance.invoiceSeq,
       receiptSeq: finance.receiptSeq,
     },
@@ -339,6 +342,7 @@ function applySnapshot(snapshot: AppSnapshot) {
     expenditure: asArray<ExpenditureRecord>(snapshot.finance.expenditure),
     staff: asArray<StaffMember>(snapshot.finance.staff),
     payrollRuns: asArray<PayrollRun>(snapshot.finance.payrollRuns),
+    feeCategories: asArray<string>(snapshot.finance.feeCategories),
     invoiceSeq: snapshot.finance.invoiceSeq ?? 6,
     receiptSeq: snapshot.finance.receiptSeq ?? 5,
   });
@@ -464,6 +468,7 @@ function migrateLegacyIfNeeded() {
       expenditure: finance.expenditure,
       staff: finance.staff,
       payrollRuns: finance.payrollRuns,
+      feeCategories: finance.feeCategories,
       invoiceSeq: finance.invoiceSeq,
       receiptSeq: finance.receiptSeq,
     });

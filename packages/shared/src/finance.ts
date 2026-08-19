@@ -1,6 +1,6 @@
 export type PaymentMethod = "cash" | "transfer" | "pos" | "online";
 export type InvoiceStatus = "pending" | "partial" | "paid" | "overdue";
-export type FeeCategory = "Tuition" | "PTA" | "Uniform" | "Exam" | "Transport" | "Other";
+export type FeeCategory = string;
 export type IncomeSource = "fees" | "donations" | "grants" | "other";
 export type ExpenseCategory = "salaries" | "utilities" | "supplies" | "maintenance" | "other";
 export type PayrollStatus = "draft" | "processed" | "paid";
