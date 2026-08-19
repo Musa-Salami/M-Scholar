@@ -115,6 +115,44 @@ export default function AdminSettingsPage() {
           Save login defaults
         </button>
       </form>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          updateSettings(form);
+          setSaved(true);
+          window.setTimeout(() => setSaved(false), 2500);
+        }}
+        className="card-shadow mt-6 max-w-2xl rounded-2xl border border-slate-100 bg-white p-6"
+      >
+        <h3 className="font-display font-semibold text-slate-900">Appointment letter text</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          These clauses are printed on every staff appointment letter with the job description and remuneration.
+        </p>
+        <div className="mt-5 space-y-5">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">Terms of service</label>
+            <textarea
+              value={form.termsOfService}
+              onChange={(e) => setForm({ ...form, termsOfService: e.target.value })}
+              className="min-h-[160px] w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-slate-700">School rules</label>
+            <textarea
+              value={form.schoolRules}
+              onChange={(e) => setForm({ ...form, schoolRules: e.target.value })}
+              className="min-h-[160px] w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+              required
+            />
+          </div>
+        </div>
+        <button type="submit" className="mt-6 rounded-xl bg-violet-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-violet-700">
+          Save letter text
+        </button>
+      </form>
     </PortalShell>
   );
 }

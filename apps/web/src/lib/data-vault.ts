@@ -22,7 +22,10 @@ export interface AppSnapshot {
       nextTermResumptionDate?: string;
       defaultStaffPassword?: string;
       defaultFamilyPassword?: string;
+      termsOfService?: string;
+      schoolRules?: string;
     };
+    appointments?: unknown[];
   };
   finance: {
     students: unknown[];

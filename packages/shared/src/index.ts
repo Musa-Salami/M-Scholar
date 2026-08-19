@@ -56,6 +56,7 @@ export const ADMIN_NAV: NavItem[] = [
   { label: "School Settings", href: "/admin/settings", icon: "Settings" },
   { label: "Classes", href: "/admin/classes", icon: "GraduationCap" },
   { label: "Students", href: "/admin/students", icon: "UserCheck" },
+  { label: "Appointments", href: "/admin/appointments", icon: "FileText" },
   { label: "Results", href: "/admin/results", icon: "Award" },
   { label: "Audit Log", href: "/admin/audit", icon: "ScrollText" },
 ];

@@ -218,6 +218,7 @@ export default function AdminUsersPage() {
       window.alert(result.error ?? "Could not delete this profile.");
       return;
     }
+    useFinanceStore.getState().deleteStaffByUserId(user.id);
     if (selectedId === user.id) setSelectedId(null);
     if (editingId === user.id) {
       setShowForm(false);

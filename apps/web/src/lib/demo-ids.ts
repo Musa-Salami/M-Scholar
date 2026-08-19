@@ -9,6 +9,7 @@ export const DEMO_IDS = {
   income: new Set(["inc1", "inc2", "inc3"]),
   expenditure: new Set(["exp1", "exp2", "exp3"]),
   staff: new Set(["st1", "st2", "st3", "st4"]),
+  appointments: new Set(["ap1", "ap2", "ap3", "ap4"]),
   assessments: new Set(["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8"]),
   assignments: new Set(["hw1", "hw2"]),
   scores: new Set(["sc1", "sc2", "sc3", "sc4"]),

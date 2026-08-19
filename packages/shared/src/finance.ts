@@ -88,6 +88,27 @@ export interface StaffMember {
   allowances: number;
   deductions: number;
   bankAccount: string;
+  userId?: string;
+  appointmentId?: string;
+}
+
+export type AppointmentStatus = "issued" | "withdrawn";
+
+export interface StaffAppointment {
+  id: string;
+  userId: string;
+  employeeId: string;
+  name: string;
+  designation: string;
+  jobDescription: string;
+  appointmentDate: string;
+  startDate: string;
+  basicSalary: number;
+  allowances: number;
+  deductions: number;
+  bankAccount: string;
+  status: AppointmentStatus;
+  issuedAt: string;
 }
 
 export interface Payslip {

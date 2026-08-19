@@ -16,6 +16,7 @@ import type {
   Payment,
   AppNotification,
   StaffMember,
+  StaffAppointment,
   Student,
   TeacherNote,
   TermResult,
@@ -80,6 +81,8 @@ function asSettings(raw: AppSnapshot["school"]["settings"] | undefined): SchoolS
     nextTermResumptionDate: raw?.nextTermResumptionDate || SEED_SETTINGS.nextTermResumptionDate,
     defaultStaffPassword: raw?.defaultStaffPassword ?? SEED_SETTINGS.defaultStaffPassword,
     defaultFamilyPassword: raw?.defaultFamilyPassword ?? SEED_SETTINGS.defaultFamilyPassword,
+    termsOfService: raw?.termsOfService || SEED_SETTINGS.termsOfService,
+    schoolRules: raw?.schoolRules || SEED_SETTINGS.schoolRules,
   };
 }
 
@@ -93,6 +96,7 @@ function emptySnapshot(settings?: SchoolSettings): AppSnapshot {
     school: {
       users: [],
       classes: [],
+      appointments: [],
       settings: settings ?? SEED_SETTINGS,
     },
     finance: {
@@ -149,12 +153,17 @@ function stripDemoSeeds(snapshot: AppSnapshot): AppSnapshot {
       return { ...thread, teacherName, subject };
     });
   const threadIds = new Set(threads.map((t) => t.id));
+  const appointments = withoutDemo<StaffAppointment>(snapshot.school.appointments, DEMO_IDS.appointments).filter(
+    (a) => userIds.has(a.userId)
+  );
+  const appointmentIds = new Set(appointments.map((a) => a.id));
 
   return {
     version: VAULT_VERSION,
     school: {
       users,
       classes,
+      appointments,
       settings: asSettings(snapshot.school.settings),
     },
     finance: {
@@ -168,7 +177,11 @@ function stripDemoSeeds(snapshot: AppSnapshot): AppSnapshot {
       ),
       income: withoutDemo<IncomeRecord>(snapshot.finance.income, DEMO_IDS.income),
       expenditure: withoutDemo<ExpenditureRecord>(snapshot.finance.expenditure, DEMO_IDS.expenditure),
-      staff: withoutDemo<StaffMember>(snapshot.finance.staff, DEMO_IDS.staff),
+      staff: withoutDemo<StaffMember>(snapshot.finance.staff, DEMO_IDS.staff).filter(
+        (m) =>
+          (!m.userId || userIds.has(m.userId)) &&
+          (!m.appointmentId || appointmentIds.has(m.appointmentId))
+      ),
       payrollRuns: asArray<PayrollRun>(snapshot.finance.payrollRuns),
       invoiceSeq: snapshot.finance.invoiceSeq ?? 1,
       receiptSeq: snapshot.finance.receiptSeq ?? 1,
@@ -203,6 +216,7 @@ function hasEnteredRecords(snapshot: AppSnapshot): boolean {
   return (
     snapshot.school.users.length > 0 ||
     snapshot.school.classes.length > 0 ||
+    (snapshot.school.appointments?.length ?? 0) > 0 ||
     snapshot.finance.students.length > 0 ||
     snapshot.finance.feeStructures.length > 0 ||
     snapshot.finance.invoices.length > 0 ||
@@ -226,6 +240,7 @@ function containsDemoSeeds(snapshot: AppSnapshot): boolean {
   const checks: Array<[unknown, Set<string>]> = [
     [snapshot.school.users, DEMO_IDS.users],
     [snapshot.school.classes, DEMO_IDS.classes],
+    [snapshot.school.appointments, DEMO_IDS.appointments],
     [snapshot.finance.students, DEMO_IDS.students],
     [snapshot.finance.feeStructures, DEMO_IDS.feeStructures],
     [snapshot.finance.invoices, DEMO_IDS.invoices],
@@ -275,6 +290,7 @@ function collectSnapshot(): AppSnapshot {
     school: {
       users: school.users,
       classes,
+      appointments: school.appointments,
       settings: school.settings,
     },
     finance: {
@@ -311,6 +327,7 @@ function applySnapshot(snapshot: AppSnapshot) {
   useSchoolStore.getState().applyPersisted({
     users: asArray<SchoolUser>(snapshot.school.users),
     classes: asArray<SchoolClass>(snapshot.school.classes),
+    appointments: asArray<StaffAppointment>(snapshot.school.appointments),
     settings: asSettings(snapshot.school.settings),
   });
   useFinanceStore.getState().applyPersisted({

@@ -12,6 +12,7 @@ import type {
   Payment,
   PaymentMethod,
   PayrollRun,
+  StaffAppointment,
   StaffMember,
   Student,
 } from "@m-scholar/shared";
@@ -290,10 +291,10 @@ const SEED_EXPENDITURE: ExpenditureRecord[] = [
 ];
 
 const SEED_STAFF: StaffMember[] = [
-  { id: "st1", employeeId: "EMP-001", name: "Emeka Nwosu", designation: "Class Teacher, Primary 1", basicSalary: 90000, allowances: 15000, deductions: 8000, bankAccount: "****4521" },
-  { id: "st2", employeeId: "EMP-002", name: "Chioma Eze", designation: "Head of Nursery", basicSalary: 95000, allowances: 15000, deductions: 8000, bankAccount: "****7832" },
-  { id: "st3", employeeId: "EMP-003", name: "Ibrahim Musa", designation: "Tahfeez Instructor", basicSalary: 100000, allowances: 20000, deductions: 10000, bankAccount: "****1190" },
-  { id: "st4", employeeId: "EMP-004", name: "Grace Adeyemi", designation: "Kindergarten Teacher", basicSalary: 85000, allowances: 12000, deductions: 7000, bankAccount: "****3344" },
+  { id: "st1", employeeId: "EMP-001", name: "Emeka Nwosu", designation: "Class Teacher, Primary 1", basicSalary: 90000, allowances: 15000, deductions: 8000, bankAccount: "****4521", userId: "u3", appointmentId: "ap1" },
+  { id: "st2", employeeId: "EMP-002", name: "Chioma Eze", designation: "Head of Nursery", basicSalary: 95000, allowances: 15000, deductions: 8000, bankAccount: "****7832", userId: "u4", appointmentId: "ap2" },
+  { id: "st3", employeeId: "EMP-003", name: "Ibrahim Musa", designation: "Tahfeez Instructor", basicSalary: 100000, allowances: 20000, deductions: 10000, bankAccount: "****1190", userId: "u5", appointmentId: "ap3" },
+  { id: "st4", employeeId: "EMP-004", name: "Grace Adeyemi", designation: "Kindergarten Teacher", basicSalary: 85000, allowances: 12000, deductions: 7000, bankAccount: "****3344", userId: "u6", appointmentId: "ap4" },
 ];
 
 interface FinanceState {
@@ -336,6 +337,12 @@ interface FinanceState {
   }) => Payment | null;
   addIncome: (data: Omit<IncomeRecord, "id">) => void;
   addExpenditure: (data: Omit<ExpenditureRecord, "id">) => void;
+  upsertStaffFromAppointment: (appointment: StaffAppointment) => { ok: boolean; error?: string; staff?: StaffMember };
+  addStaff: (data: Omit<StaffMember, "id">) => { ok: boolean; error?: string; staff?: StaffMember };
+  updateStaff: (id: string, data: Partial<Omit<StaffMember, "id">>) => { ok: boolean; error?: string; staff?: StaffMember };
+  deleteStaff: (id: string) => { ok: boolean; error?: string };
+  deleteStaffByAppointment: (appointmentId: string) => void;
+  deleteStaffByUserId: (userId: string) => void;
   runPayroll: (month: string, year: number) => PayrollRun;
   markPayrollPaid: (runId: string) => void;
 
@@ -389,7 +396,7 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
           payments: data.payments ?? [],
           income: data.income ?? [],
           expenditure: data.expenditure ?? [],
-          staff: data.staff ?? SEED_STAFF,
+          staff: data.staff ?? [],
           payrollRuns: data.payrollRuns ?? [],
           invoiceSeq: data.invoiceSeq ?? 6,
           receiptSeq: data.receiptSeq ?? 5,
@@ -538,6 +545,94 @@ export const useFinanceStore = create<FinanceState>()((set, get) => ({
         set((s) => ({
           expenditure: [...s.expenditure, { ...data, id: `exp${Date.now()}` }],
         }));
+      },
+
+      upsertStaffFromAppointment: (appointment) => {
+        if (appointment.status !== "issued") {
+          get().deleteStaffByAppointment(appointment.id);
+          return { ok: true };
+        }
+        const existing = get().staff.find(
+          (m) => m.appointmentId === appointment.id || m.userId === appointment.userId || m.employeeId === appointment.employeeId
+        );
+        const payload: Omit<StaffMember, "id"> = {
+          employeeId: appointment.employeeId,
+          name: appointment.name,
+          designation: appointment.designation,
+          basicSalary: appointment.basicSalary,
+          allowances: appointment.allowances,
+          deductions: appointment.deductions,
+          bankAccount: appointment.bankAccount,
+          userId: appointment.userId,
+          appointmentId: appointment.id,
+        };
+        if (existing) return get().updateStaff(existing.id, payload);
+        return get().addStaff(payload);
+      },
+
+      addStaff: (data) => {
+        const name = data.name.trim();
+        const employeeId = data.employeeId.trim();
+        const designation = data.designation.trim();
+        if (!name) return { ok: false, error: "Enter the staff name." };
+        if (!employeeId) return { ok: false, error: "Enter an employee ID." };
+        if (!designation) return { ok: false, error: "Enter a designation." };
+        if ((Number(data.basicSalary) || 0) <= 0) return { ok: false, error: "Enter a basic salary greater than 0." };
+        if (get().staff.some((m) => m.employeeId.toLowerCase() === employeeId.toLowerCase())) {
+          return { ok: false, error: "That employee ID is already on the salary register." };
+        }
+        const staff: StaffMember = {
+          ...data,
+          id: `st${Date.now()}`,
+          name,
+          employeeId,
+          designation,
+          basicSalary: Number(data.basicSalary) || 0,
+          allowances: Number(data.allowances) || 0,
+          deductions: Number(data.deductions) || 0,
+          bankAccount: data.bankAccount.trim(),
+        };
+        set((s) => ({ staff: [...s.staff, staff] }));
+        return { ok: true, staff };
+      },
+
+      updateStaff: (id, data) => {
+        const current = get().staff.find((m) => m.id === id);
+        if (!current) return { ok: false, error: "Staff payroll record not found." };
+        const next: StaffMember = {
+          ...current,
+          ...data,
+          id,
+          name: (data.name ?? current.name).trim(),
+          employeeId: (data.employeeId ?? current.employeeId).trim(),
+          designation: (data.designation ?? current.designation).trim(),
+          bankAccount: (data.bankAccount ?? current.bankAccount).trim(),
+          basicSalary: data.basicSalary !== undefined ? Number(data.basicSalary) || 0 : current.basicSalary,
+          allowances: data.allowances !== undefined ? Number(data.allowances) || 0 : current.allowances,
+          deductions: data.deductions !== undefined ? Number(data.deductions) || 0 : current.deductions,
+        };
+        if (!next.name) return { ok: false, error: "Enter the staff name." };
+        if (!next.employeeId) return { ok: false, error: "Enter an employee ID." };
+        if (next.basicSalary <= 0) return { ok: false, error: "Enter a basic salary greater than 0." };
+        if (get().staff.some((m) => m.id !== id && m.employeeId.toLowerCase() === next.employeeId.toLowerCase())) {
+          return { ok: false, error: "That employee ID is already on the salary register." };
+        }
+        set((s) => ({ staff: s.staff.map((m) => (m.id === id ? next : m)) }));
+        return { ok: true, staff: next };
+      },
+
+      deleteStaff: (id) => {
+        if (!get().staff.some((m) => m.id === id)) return { ok: false, error: "Staff payroll record not found." };
+        set((s) => ({ staff: s.staff.filter((m) => m.id !== id) }));
+        return { ok: true };
+      },
+
+      deleteStaffByAppointment: (appointmentId) => {
+        set((s) => ({ staff: s.staff.filter((m) => m.appointmentId !== appointmentId) }));
+      },
+
+      deleteStaffByUserId: (userId) => {
+        set((s) => ({ staff: s.staff.filter((m) => m.userId !== userId) }));
       },
 
       runPayroll: (month, year) => {

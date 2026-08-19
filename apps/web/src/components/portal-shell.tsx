@@ -22,6 +22,7 @@ import {
   MessageSquare,
   Calendar,
   Award,
+  FileText,
   LogOut,
   KeyRound,
   Menu,
@@ -59,6 +60,7 @@ const ICONS: Record<string, LucideIcon> = {
   MessageSquare,
   Calendar,
   Award,
+  FileText,
 };
 
 const ACCENT_STYLES: Record<UserRole, { badge: string; active: string }> = {

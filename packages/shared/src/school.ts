@@ -36,6 +36,23 @@ export const SCHOOL = {
   ],
 };
 
+export const DEFAULT_TERMS_OF_SERVICE = `1. This appointment is subject to a six-month probation from the start date.
+2. Staff shall give one calendar month's written notice to resign, or receive one month's salary in lieu of notice. The school may apply the same period when ending the appointment, except in cases of gross misconduct.
+3. The school may terminate this appointment for misconduct, neglect of duty, insubordination, or absence without approved leave.
+4. Staff shall keep pupil records, family contacts, and school finances confidential.
+5. Hours of work, assembly, extra lessons, and assigned duties follow the school timetable and the head of school's instructions.
+6. Remuneration is paid monthly after the accounts office processes payroll. Unauthorised collections from parents are forbidden.
+7. This letter, the job description, and the school rules together form the terms of service.`;
+
+export const DEFAULT_SCHOOL_RULES = `1. Staff must be punctual, neatly dressed, and professional at all times.
+2. Corporal punishment is not permitted.
+3. Staff shall not collect unofficial fees, gifts that influence marks, or money from parents except through the accounts office.
+4. Personal mobile phones shall not be used during lessons except for approved school work.
+5. Every child shall be treated fairly, with Islamic manners, patience, and care.
+6. Staff shall support Tahfeez, moral instruction, and the school motto of academic excellence and moral values.
+7. School property must be used with care and returned when the appointment ends.
+8. Staff shall not discuss pupils or families on social media.`;
+
 export const PUBLIC_NAV = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about" },

@@ -157,6 +157,7 @@ export default function AdminDashboardPage() {
           <div className="mt-4 grid grid-cols-2 gap-3">
             {[
               { label: "Add user", href: "/admin/users" },
+              { label: "Issue appointment", href: "/admin/appointments" },
               { label: "Enroll students", href: "/admin/students" },
               { label: "Manage classes", href: "/admin/classes" },
               { label: "School settings", href: "/admin/settings" },

@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import { SCHOOL, DEMO_USERS, type UserRole } from "@m-scholar/shared";
+import { SCHOOL, DEMO_USERS, DEFAULT_SCHOOL_RULES, DEFAULT_TERMS_OF_SERVICE, type StaffAppointment, type UserRole } from "@m-scholar/shared";
 import { emailsMatch, isFamilyRole, phonesMatch } from "@/lib/credentials";
 
 export interface SchoolUser {
@@ -36,6 +36,8 @@ export interface SchoolSettings {
   nextTermResumptionDate: string;
   defaultStaffPassword: string;
   defaultFamilyPassword: string;
+  termsOfService: string;
+  schoolRules: string;
 }
 
 export const SEED_USERS: SchoolUser[] = [
@@ -77,16 +79,91 @@ export const SEED_SETTINGS: SchoolSettings = {
   nextTermResumptionDate: "2026-01-12",
   defaultStaffPassword: "Staff2026",
   defaultFamilyPassword: "Family2026",
+  termsOfService: DEFAULT_TERMS_OF_SERVICE,
+  schoolRules: DEFAULT_SCHOOL_RULES,
 };
+
+export const SEED_APPOINTMENTS: StaffAppointment[] = [
+  {
+    id: "ap1",
+    userId: "u3",
+    employeeId: "EMP-001",
+    name: "Emeka Nwosu",
+    designation: "Class Teacher, Primary 1",
+    jobDescription: "Plan and teach Primary 1 lessons, keep the class register, set CA and exam work, and report to the head of school.",
+    appointmentDate: "2026-01-05",
+    startDate: "2026-01-12",
+    basicSalary: 90000,
+    allowances: 15000,
+    deductions: 8000,
+    bankAccount: "****4521",
+    status: "issued",
+    issuedAt: "2026-01-05T09:00:00",
+  },
+  {
+    id: "ap2",
+    userId: "u4",
+    employeeId: "EMP-002",
+    name: "Chioma Eze",
+    designation: "Head of Nursery",
+    jobDescription: "Lead Nursery classes, support phonics and early years practice, and coordinate nursery teachers.",
+    appointmentDate: "2026-01-05",
+    startDate: "2026-01-12",
+    basicSalary: 95000,
+    allowances: 15000,
+    deductions: 8000,
+    bankAccount: "****7832",
+    status: "issued",
+    issuedAt: "2026-01-05T09:00:00",
+  },
+  {
+    id: "ap3",
+    userId: "u5",
+    employeeId: "EMP-003",
+    name: "Ibrahim Musa",
+    designation: "Tahfeez Instructor",
+    jobDescription: "Lead Qur'an recitation and memorisation, and support Islamic manners across the primary classes.",
+    appointmentDate: "2026-01-05",
+    startDate: "2026-01-12",
+    basicSalary: 100000,
+    allowances: 20000,
+    deductions: 10000,
+    bankAccount: "****1190",
+    status: "issued",
+    issuedAt: "2026-01-05T09:00:00",
+  },
+  {
+    id: "ap4",
+    userId: "u6",
+    employeeId: "EMP-004",
+    name: "Grace Adeyemi",
+    designation: "Kindergarten Teacher",
+    jobDescription: "Care for Kindergarten pupils, teach early literacy and numeracy, and keep a safe classroom.",
+    appointmentDate: "2026-01-05",
+    startDate: "2026-01-12",
+    basicSalary: 85000,
+    allowances: 12000,
+    deductions: 7000,
+    bankAccount: "****3344",
+    status: "issued",
+    issuedAt: "2026-01-05T09:00:00",
+  },
+];
 
 interface SchoolState {
   users: SchoolUser[];
   classes: SchoolClass[];
+  appointments: StaffAppointment[];
   settings: SchoolSettings;
   restored: boolean;
   restore: () => void;
   resetToDemo: () => void;
-  applyPersisted: (data: { users: SchoolUser[]; classes: SchoolClass[]; settings?: SchoolSettings }) => void;
+  applyPersisted: (data: {
+    users: SchoolUser[];
+    classes: SchoolClass[];
+    appointments?: StaffAppointment[];
+    settings?: SchoolSettings;
+  }) => void;
   addUser: (user: Omit<SchoolUser, "id" | "status">, opts?: { fromEnrolment?: boolean }) => { ok: boolean; error?: string; user?: SchoolUser };
   updateUser: (id: string, patch: Partial<Omit<SchoolUser, "id">>) => { ok: boolean; error?: string };
   deleteUser: (id: string) => { ok: boolean; error?: string };
@@ -94,6 +171,9 @@ interface SchoolState {
   updateClass: (id: string, patch: { name?: string; teacherId?: string | null }) => { ok: boolean; error?: string; previousName?: string };
   deleteClass: (id: string) => { ok: boolean; error?: string };
   assignTeacher: (classId: string, teacherId: string | null) => void;
+  issueAppointment: (data: Omit<StaffAppointment, "id" | "status" | "issuedAt" | "name">) => { ok: boolean; error?: string; appointment?: StaffAppointment };
+  updateAppointment: (id: string, patch: Partial<Omit<StaffAppointment, "id" | "issuedAt">>) => { ok: boolean; error?: string; appointment?: StaffAppointment };
+  withdrawAppointment: (id: string) => { ok: boolean; error?: string; appointment?: StaffAppointment };
   updateSettings: (settings: SchoolSettings) => void;
   syncClassCounts: (students: { className: string }[]) => void;
 }
@@ -124,9 +204,19 @@ function loginConflict(users: SchoolUser[], candidate: Pick<SchoolUser, "email" 
   return null;
 }
 
+export function nextEmployeeId(appointments: { employeeId: string }[]) {
+  const nums = appointments.map((row) => {
+    const match = row.employeeId.match(/(\d+)$/);
+    return match ? Number(match[1]) : 0;
+  });
+  const next = Math.max(0, ...nums) + 1;
+  return `EMP-${String(next).padStart(3, "0")}`;
+}
+
 export const useSchoolStore = create<SchoolState>()((set, get) => ({
   users: SEED_USERS,
   classes: SEED_CLASSES,
+  appointments: SEED_APPOINTMENTS,
   settings: SEED_SETTINGS,
   restored: false,
 
@@ -136,6 +226,7 @@ export const useSchoolStore = create<SchoolState>()((set, get) => ({
     set({
       users: SEED_USERS,
       classes: SEED_CLASSES,
+      appointments: SEED_APPOINTMENTS,
       settings: SEED_SETTINGS,
       restored: true,
     }),
@@ -144,11 +235,14 @@ export const useSchoolStore = create<SchoolState>()((set, get) => ({
     set({
       users: data.users.map(normalizeUser),
       classes: data.classes,
+      appointments: data.appointments ?? [],
       settings: {
         ...SEED_SETTINGS,
         ...data.settings,
         defaultStaffPassword: data.settings?.defaultStaffPassword ?? SEED_SETTINGS.defaultStaffPassword,
         defaultFamilyPassword: data.settings?.defaultFamilyPassword ?? SEED_SETTINGS.defaultFamilyPassword,
+        termsOfService: data.settings?.termsOfService || SEED_SETTINGS.termsOfService,
+        schoolRules: data.settings?.schoolRules || SEED_SETTINGS.schoolRules,
       },
       restored: true,
     }),
@@ -215,6 +309,7 @@ export const useSchoolStore = create<SchoolState>()((set, get) => ({
     set((s) => ({
       users: s.users.filter((u) => u.id !== id),
       classes: s.classes.map((c) => (c.teacherId === id ? { ...c, teacherId: null } : c)),
+      appointments: s.appointments.filter((a) => a.userId !== id),
     }));
     return { ok: true };
   },
@@ -272,6 +367,83 @@ export const useSchoolStore = create<SchoolState>()((set, get) => ({
     set((s) => ({
       classes: s.classes.map((c) => (c.id === classId ? { ...c, teacherId } : c)),
     }));
+  },
+
+  issueAppointment: (data) => {
+    const user = get().users.find((u) => u.id === data.userId);
+    if (!user) return { ok: false, error: "Create the staff login on Users first." };
+    if (user.role === "parent" || user.role === "student") {
+      return { ok: false, error: "Appointments are for teachers and school officers only." };
+    }
+    if (user.status !== "Active") return { ok: false, error: "Set this staff profile Active before issuing an appointment." };
+    const designation = data.designation.trim();
+    const jobDescription = data.jobDescription.trim();
+    if (!designation) return { ok: false, error: "Enter a job title / designation." };
+    if (!jobDescription) return { ok: false, error: "Enter a job description." };
+    if (!data.appointmentDate) return { ok: false, error: "Enter the appointment date." };
+    if (!data.startDate) return { ok: false, error: "Enter the start date." };
+    if (data.basicSalary <= 0) return { ok: false, error: "Enter a basic salary greater than 0." };
+    const employeeId = data.employeeId.trim() || nextEmployeeId(get().appointments);
+    if (get().appointments.some((a) => a.status === "issued" && a.userId === user.id)) {
+      return { ok: false, error: "This person already has an issued appointment. Edit that letter instead." };
+    }
+    if (get().appointments.some((a) => a.employeeId.toLowerCase() === employeeId.toLowerCase())) {
+      return { ok: false, error: "That employee ID is already in use." };
+    }
+    const appointment: StaffAppointment = {
+      id: `ap${Date.now()}`,
+      userId: user.id,
+      employeeId,
+      name: user.name,
+      designation,
+      jobDescription,
+      appointmentDate: data.appointmentDate,
+      startDate: data.startDate,
+      basicSalary: Number(data.basicSalary) || 0,
+      allowances: Number(data.allowances) || 0,
+      deductions: Number(data.deductions) || 0,
+      bankAccount: data.bankAccount.trim(),
+      status: "issued",
+      issuedAt: new Date().toISOString(),
+    };
+    set((s) => ({ appointments: [appointment, ...s.appointments] }));
+    return { ok: true, appointment };
+  },
+
+  updateAppointment: (id, patch) => {
+    const current = get().appointments.find((a) => a.id === id);
+    if (!current) return { ok: false, error: "Appointment not found." };
+    const next: StaffAppointment = {
+      ...current,
+      ...patch,
+      id: current.id,
+      issuedAt: current.issuedAt,
+      designation: (patch.designation ?? current.designation).trim(),
+      jobDescription: (patch.jobDescription ?? current.jobDescription).trim(),
+      employeeId: (patch.employeeId ?? current.employeeId).trim(),
+      bankAccount: (patch.bankAccount ?? current.bankAccount).trim(),
+      basicSalary: patch.basicSalary !== undefined ? Number(patch.basicSalary) || 0 : current.basicSalary,
+      allowances: patch.allowances !== undefined ? Number(patch.allowances) || 0 : current.allowances,
+      deductions: patch.deductions !== undefined ? Number(patch.deductions) || 0 : current.deductions,
+    };
+    const user = get().users.find((u) => u.id === next.userId);
+    if (user) next.name = user.name;
+    if (!next.designation) return { ok: false, error: "Enter a job title / designation." };
+    if (!next.jobDescription) return { ok: false, error: "Enter a job description." };
+    if (next.basicSalary <= 0) return { ok: false, error: "Enter a basic salary greater than 0." };
+    if (get().appointments.some((a) => a.id !== id && a.employeeId.toLowerCase() === next.employeeId.toLowerCase())) {
+      return { ok: false, error: "That employee ID is already in use." };
+    }
+    set((s) => ({ appointments: s.appointments.map((a) => (a.id === id ? next : a)) }));
+    return { ok: true, appointment: next };
+  },
+
+  withdrawAppointment: (id) => {
+    const current = get().appointments.find((a) => a.id === id);
+    if (!current) return { ok: false, error: "Appointment not found." };
+    const appointment = { ...current, status: "withdrawn" as const };
+    set((s) => ({ appointments: s.appointments.map((a) => (a.id === id ? appointment : a)) }));
+    return { ok: true, appointment };
   },
 
   updateSettings: (settings) => set({ settings }),
