@@ -14,6 +14,10 @@ export function isFamilyRole(role: UserRole) {
   return role === "parent" || role === "student";
 }
 
+export function isStaffRole(role: UserRole) {
+  return role === "class_teacher" || role === "super_admin" || role === "account_officer";
+}
+
 export function normalizePhone(value: string): string {
   const digits = value.replace(/\D/g, "");
   if (digits.startsWith("234") && digits.length >= 13) return `0${digits.slice(3)}`;

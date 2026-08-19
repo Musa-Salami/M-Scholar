@@ -12,6 +12,9 @@ export interface SchoolUser {
   password: string;
   role: UserRole;
   status: "Active" | "Inactive";
+  dateOfBirth?: string;
+  address?: string;
+  nextOfKin?: string;
 }
 
 export interface SchoolClass {
@@ -36,12 +39,12 @@ export interface SchoolSettings {
 }
 
 export const SEED_USERS: SchoolUser[] = [
-  { id: "u1", name: "System Administrator", email: "admin@mscholar.app", phone: "", password: "admin123", role: "super_admin", status: "Active" },
-  { id: "u2", name: "Adaeze Okonkwo", email: "finance@mscholar.app", phone: "", password: "finance123", role: "account_officer", status: "Active" },
-  { id: "u3", name: "Emeka Nwosu", email: "teacher@mscholar.app", phone: "", password: "teacher123", role: "class_teacher", status: "Active" },
-  { id: "u4", name: "Chioma Eze", email: "chioma.eze@mscholar.app", phone: "", password: "teacher123", role: "class_teacher", status: "Active" },
-  { id: "u5", name: "Ibrahim Musa", email: "ibrahim.musa@mscholar.app", phone: "", password: "teacher123", role: "class_teacher", status: "Active" },
-  { id: "u6", name: "Grace Adeyemi", email: "grace.adeyemi@mscholar.app", phone: "", password: "teacher123", role: "class_teacher", status: "Active" },
+  { id: "u1", name: "System Administrator", email: "admin@mscholar.app", phone: "+234 803 555 2001", password: "admin123", role: "super_admin", status: "Active", dateOfBirth: "1985-03-14", address: "Adavi Road, Ogaminana, Kogi State", nextOfKin: "Aisha Bello (sister) · +234 803 555 2101" },
+  { id: "u2", name: "Adaeze Okonkwo", email: "finance@mscholar.app", phone: "+234 803 555 2002", password: "finance123", role: "account_officer", status: "Active", dateOfBirth: "1990-07-22", address: "Okene Road, Ogaminana, Kogi State", nextOfKin: "Chinedu Okonkwo (husband) · +234 803 555 2102" },
+  { id: "u3", name: "Emeka Nwosu", email: "teacher@mscholar.app", phone: "+234 803 555 2003", password: "teacher123", role: "class_teacher", status: "Active", dateOfBirth: "1988-11-05", address: "New Zango, Ogaminana, Kogi State", nextOfKin: "Ngozi Nwosu (wife) · +234 803 555 2103" },
+  { id: "u4", name: "Chioma Eze", email: "chioma.eze@mscholar.app", phone: "+234 803 555 2004", password: "teacher123", role: "class_teacher", status: "Active", dateOfBirth: "1992-02-18", address: "Ihima Road, Ogaminana, Kogi State", nextOfKin: "Peter Eze (brother) · +234 803 555 2104" },
+  { id: "u5", name: "Ibrahim Musa", email: "ibrahim.musa@mscholar.app", phone: "+234 803 555 2005", password: "teacher123", role: "class_teacher", status: "Active", dateOfBirth: "1987-09-09", address: "Adavi LGA Secretariat Road, Ogaminana", nextOfKin: "Amina Musa (wife) · +234 803 555 2105" },
+  { id: "u6", name: "Grace Adeyemi", email: "grace.adeyemi@mscholar.app", phone: "+234 803 555 2006", password: "teacher123", role: "class_teacher", status: "Active", dateOfBirth: "1991-12-01", address: "Opposite New Zango, Ogaminana, Kogi State", nextOfKin: "Tunde Adeyemi (husband) · +234 803 555 2106" },
   { id: "u7", name: "Fatima Bello", email: "parent@mscholar.app", phone: "+234 801 555 1042", password: "parent123", role: "parent", status: "Active" },
   { id: "u8", name: "Amina Bello", email: "student@mscholar.app", phone: "+234 809 555 1042", password: "student123", role: "student", status: "Active" },
   { id: "u9", name: "Ngozi Okafor", email: "chidi.parent@email.com", phone: "+234 802 555 1043", password: "parent123", role: "parent", status: "Active" },
@@ -103,6 +106,9 @@ function normalizeUser(user: SchoolUser): SchoolUser {
     phone: user.phone || demo?.user.phone || "",
     password: user.password || demo?.password || "",
     status: user.status === "Inactive" ? "Inactive" : "Active",
+    dateOfBirth: user.dateOfBirth ?? "",
+    address: user.address ?? "",
+    nextOfKin: user.nextOfKin ?? "",
   };
 }
 
@@ -166,6 +172,9 @@ export const useSchoolStore = create<SchoolState>()((set, get) => ({
       password,
       role: user.role,
       status: "Active",
+      dateOfBirth: user.dateOfBirth?.trim() ?? "",
+      address: user.address?.trim() ?? "",
+      nextOfKin: user.nextOfKin?.trim() ?? "",
     };
     set((s) => ({ users: [...s.users, created] }));
     return { ok: true, user: created };

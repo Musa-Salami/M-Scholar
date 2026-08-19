@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/dashboard-ui";
 import { StudentRecordDetails } from "@/components/student-record-view";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useSchoolReady } from "@/hooks/use-school-ready";
-import { emailsMatch, isFamilyRole, loginLabel, loginValue, phonesMatch } from "@/lib/credentials";
+import { emailsMatch, isFamilyRole, isStaffRole, loginLabel, loginValue, phonesMatch } from "@/lib/credentials";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useSchoolStore, type SchoolClass, type SchoolUser } from "@/lib/school-store";
 import { useAuthStore } from "@/lib/auth-store";
@@ -30,6 +30,18 @@ const ROLE_SORT: Record<UserRole, number> = {
 };
 
 type UserGroup = "teachers" | "parents" | "students" | "staff" | "all";
+
+const EMPTY_FORM = {
+  name: "",
+  email: "",
+  phone: "",
+  password: "",
+  role: "class_teacher" as UserRole,
+  status: "Active" as "Active" | "Inactive",
+  dateOfBirth: "",
+  address: "",
+  nextOfKin: "",
+};
 
 function inGroup(role: UserRole, group: UserGroup) {
   if (group === "all") return true;
@@ -54,20 +66,15 @@ export default function AdminUsersPage() {
   const [group, setGroup] = useState<UserGroup>("teachers");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    password: "",
-    role: "class_teacher" as UserRole,
-    status: "Active" as "Active" | "Inactive",
-  });
+  const [form, setForm] = useState({ ...EMPTY_FORM });
   const [formError, setFormError] = useState("");
   const [created, setCreated] = useState<SchoolUser | null>(null);
   const [copied, setCopied] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const familyForm = isFamilyRole(form.role);
+  const staffForm = isStaffRole(form.role);
+  const showStaffColumns = group === "teachers" || group === "staff";
 
   const groupedCounts = useMemo(() => {
     const list = users ?? [];
@@ -84,7 +91,15 @@ export default function AdminUsersPage() {
     const q = search.toLowerCase();
     return (users ?? [])
       .filter((u) => inGroup(u.role, group))
-      .filter((u) => !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || (u.phone ?? "").toLowerCase().includes(q))
+      .filter(
+        (u) =>
+          !q ||
+          u.name.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          (u.phone ?? "").toLowerCase().includes(q) ||
+          (u.address ?? "").toLowerCase().includes(q) ||
+          (u.nextOfKin ?? "").toLowerCase().includes(q)
+      )
       .slice()
       .sort((a, b) => ROLE_SORT[a.role] - ROLE_SORT[b.role] || a.name.localeCompare(b.name));
   }, [users, search, group]);
@@ -103,12 +118,9 @@ export default function AdminUsersPage() {
     setFormError("");
     setEditingId(null);
     setForm({
-      name: "",
-      email: "",
-      phone: "",
+      ...EMPTY_FORM,
       password: settings.defaultStaffPassword || "",
       role: "class_teacher",
-      status: "Active",
     });
     setShowForm(true);
   };
@@ -124,6 +136,9 @@ export default function AdminUsersPage() {
       password: "",
       role: user.role,
       status: user.status,
+      dateOfBirth: user.dateOfBirth ?? "",
+      address: user.address ?? "",
+      nextOfKin: user.nextOfKin ?? "",
     });
     setShowForm(true);
   };
@@ -146,6 +161,9 @@ export default function AdminUsersPage() {
         phone: form.phone,
         role: form.role,
         status: form.status,
+        dateOfBirth: form.dateOfBirth,
+        address: form.address,
+        nextOfKin: form.nextOfKin,
       };
       if (form.password.trim()) patch.password = form.password.trim();
       if (editingId === currentUserId && form.status === "Inactive") {
@@ -167,6 +185,9 @@ export default function AdminUsersPage() {
       phone: form.phone,
       password: form.password,
       role: form.role,
+      dateOfBirth: form.dateOfBirth,
+      address: form.address,
+      nextOfKin: form.nextOfKin,
     });
     if (!result.ok || !result.user) {
       setFormError(result.error ?? "Could not create this profile.");
@@ -177,7 +198,7 @@ export default function AdminUsersPage() {
     }
     setCreated(result.user);
     setCopied(false);
-    setForm({ name: "", email: "", phone: "", password: settings.defaultStaffPassword || "", role: "class_teacher", status: "Active" });
+    setForm({ ...EMPTY_FORM, password: settings.defaultStaffPassword || "", role: "class_teacher" });
     setShowForm(false);
   };
 
@@ -274,7 +295,7 @@ export default function AdminUsersPage() {
           <p className="mt-1 text-sm text-slate-500">
             {familyForm
               ? "Parent and student accounts sign in with phone number and password."
-              : "Teachers and school officers sign in with email and password."}
+              : "Teachers and school officers sign in with email and password. Add date of birth, address, phone number, and next of kin."}
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <input
@@ -320,14 +341,23 @@ export default function AdminUsersPage() {
                 />
               </>
             ) : (
-              <input
-                type="email"
-                placeholder="Email (login)"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500 sm:col-span-2"
-                required
-              />
+              <>
+                <input
+                  type="email"
+                  placeholder="Email (login)"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone number"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </>
             )}
             <input
               type="text"
@@ -346,6 +376,37 @@ export default function AdminUsersPage() {
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
+            {staffForm && (
+              <>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-500">Date of birth</label>
+                  <input
+                    type="date"
+                    value={form.dateOfBirth}
+                    onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-500">Next of kin</label>
+                  <input
+                    placeholder="Name, relationship, phone"
+                    value={form.nextOfKin}
+                    onChange={(e) => setForm({ ...form, nextOfKin: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-xs font-medium text-slate-500">Address</label>
+                  <input
+                    placeholder="Home address"
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-500"
+                  />
+                </div>
+              </>
+            )}
           </div>
           {formError && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</p>}
           <div className="mt-4 flex gap-3">
@@ -405,11 +466,20 @@ export default function AdminUsersPage() {
             />
           </div>
         </div>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
             <tr>
               <th className="px-6 py-3">Name</th>
               <th className="px-6 py-3">Login</th>
+              {showStaffColumns && (
+                <>
+                  <th className="px-6 py-3">Date of birth</th>
+                  <th className="px-6 py-3">Phone number</th>
+                  <th className="px-6 py-3">Address</th>
+                  <th className="px-6 py-3">Next of kin</th>
+                </>
+              )}
               <th className="px-6 py-3">Role</th>
               <th className="px-6 py-3">Status</th>
               <th className="px-6 py-3">Record</th>
@@ -418,7 +488,7 @@ export default function AdminUsersPage() {
           <tbody className="divide-y divide-slate-100">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-slate-500">
+                <td colSpan={showStaffColumns ? 9 : 5} className="px-6 py-8 text-slate-500">
                   No users in this group.
                 </td>
               </tr>
@@ -427,6 +497,14 @@ export default function AdminUsersPage() {
                 <tr key={user.id} className="hover:bg-slate-50">
                   <td className="px-6 py-4 font-medium text-slate-900">{user.name}</td>
                   <td className="px-6 py-4 text-slate-500">{loginValue(user) || "—"}</td>
+                  {showStaffColumns && (
+                    <>
+                      <td className="whitespace-nowrap px-6 py-4 text-slate-500">{user.dateOfBirth || "—"}</td>
+                      <td className="whitespace-nowrap px-6 py-4 text-slate-500">{user.phone || "—"}</td>
+                      <td className="max-w-[220px] px-6 py-4 text-slate-500">{user.address || "—"}</td>
+                      <td className="max-w-[240px] px-6 py-4 text-slate-500">{user.nextOfKin || "—"}</td>
+                    </>
+                  )}
                   <td className="px-6 py-4">
                     <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${ROLE_BADGE[user.role]}`}>
                       {ROLE_LABELS[user.role]}
@@ -475,6 +553,7 @@ export default function AdminUsersPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </PortalShell>
   );
@@ -526,6 +605,26 @@ function UserRecordPanel({
           <p className="text-sm text-slate-500">
             {loginLabel(user.role)}: {loginValue(user) || "—"} · {ROLE_LABELS[user.role]}
           </p>
+          {isStaffRole(user.role) && (
+            <dl className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">Date of birth</dt>
+                <dd>{user.dateOfBirth || "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">Phone number</dt>
+                <dd>{user.phone || "—"}</dd>
+              </div>
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">Address</dt>
+                <dd>{user.address || "—"}</dd>
+              </div>
+              <div className="sm:col-span-2">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">Next of kin</dt>
+                <dd>{user.nextOfKin || "—"}</dd>
+              </div>
+            </dl>
+          )}
           <label className="mt-2 inline-flex items-center gap-2 text-sm text-slate-600">
             Status
             <select
