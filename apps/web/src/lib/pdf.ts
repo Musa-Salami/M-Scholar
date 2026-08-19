@@ -3,7 +3,7 @@
 const PAGE_W = 595;
 const PAGE_H = 842;
 const MARGIN = 40;
-const HEADER_H = 58;
+const HEADER_H = 64;
 const FOOTER_H = 42;
 const GOLD: [number, number, number] = [196, 149, 42];
 
@@ -84,6 +84,52 @@ export function formatPdfMoney(amount: number): string {
   return `NGN ${Math.round(amount).toLocaleString("en-NG")}`;
 }
 
+type PdfCrest = { data: Uint8Array; width: number; height: number };
+
+let crestCache: PdfCrest | null | undefined;
+
+async function loadSchoolCrest(): Promise<PdfCrest | null> {
+  if (crestCache !== undefined) return crestCache;
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    crestCache = null;
+    return null;
+  }
+  try {
+    const res = await fetch("/brand/logo.png");
+    if (!res.ok) {
+      crestCache = null;
+      return null;
+    }
+    const blob = await res.blob();
+    const bitmap = await createImageBitmap(blob);
+    const size = 192;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      crestCache = null;
+      return null;
+    }
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(bitmap, 0, 0, size, size);
+    bitmap.close();
+    const jpeg = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((file) => (file ? resolve(file) : reject(new Error("Could not encode crest"))), "image/jpeg", 0.92);
+    });
+    crestCache = { data: new Uint8Array(await jpeg.arrayBuffer()), width: size, height: size };
+    return crestCache;
+  } catch {
+    crestCache = null;
+    return null;
+  }
+}
+
+if (typeof window !== "undefined") {
+  void loadSchoolCrest();
+}
+
 export class SimplePdf {
   private pages: string[][] = [[]];
   private y = HEADER_H + 18;
@@ -91,6 +137,7 @@ export class SimplePdf {
   private bold = false;
   private color = "0 0 0";
   private watermark: { text: string; r: number; g: number; b: number; size: number } | null = null;
+  private crest: PdfCrest | null = null;
   private brand: PdfBrand = {
     schoolName: "M-Scholar",
     motto: "Academic Excellence & Moral Values",
@@ -395,11 +442,21 @@ export class SimplePdf {
     add(`${rgb(a[0], a[1], a[2])} rg 0 0 7 ${PAGE_H.toFixed(2)} re f`);
     add(`${rgb(a[0], a[1], a[2])} rg 0 ${this.pdfY(HEADER_H).toFixed(2)} ${PAGE_W.toFixed(2)} ${HEADER_H.toFixed(2)} re f`);
     add(`${rgb(GOLD[0], GOLD[1], GOLD[2])} rg 0 ${this.pdfY(HEADER_H + 4).toFixed(2)} ${PAGE_W.toFixed(2)} 4 re f`);
-    add(`${rgb(255, 255, 255)} rg 18 ${this.pdfY(44).toFixed(2)} 28 28 re f`);
-    add(this.textCmd(mark, 32, 21, 11, true, a, "center"));
-    add(this.textCmd(school, 56, 16, 13, true, [255, 255, 255]));
+    const logoSize = 38;
+    const logoX = 16;
+    const logoY = 13;
+    add(`${rgb(255, 255, 255)} rg ${logoX.toFixed(2)} ${this.pdfY(logoY + logoSize).toFixed(2)} ${logoSize.toFixed(2)} ${logoSize.toFixed(2)} re f`);
+    add(`${rgb(GOLD[0], GOLD[1], GOLD[2])} RG 1.1 w ${logoX.toFixed(2)} ${this.pdfY(logoY + logoSize).toFixed(2)} ${logoSize.toFixed(2)} ${logoSize.toFixed(2)} re S`);
+    if (this.crest) {
+      add(
+        `q ${logoSize.toFixed(2)} 0 0 ${logoSize.toFixed(2)} ${logoX.toFixed(2)} ${this.pdfY(logoY + logoSize).toFixed(2)} cm /Im1 Do Q`
+      );
+    } else {
+      add(this.textCmd(mark, logoX + logoSize / 2, logoY + 12, 12, true, a, "center"));
+    }
+    add(this.textCmd(school, logoX + logoSize + 10, 18, 13, true, [255, 255, 255]));
     if (this.brand.motto) {
-      add(this.textCmd(this.brand.motto, 56, 34, 8, false, [226, 232, 240]));
+      add(this.textCmd(this.brand.motto, logoX + logoSize + 10, 36, 8, false, [226, 232, 240]));
     }
 
     add(`${rgb(248, 250, 252)} rg 0 0 ${PAGE_W.toFixed(2)} ${FOOTER_H.toFixed(2)} re f`);
@@ -441,9 +498,10 @@ export class SimplePdf {
     ].join("\n");
   }
 
-  save(filename: string) {
+  async save(filename: string) {
+    this.crest = await loadSchoolCrest();
     const encoder = new TextEncoder();
-    const objects: string[] = [];
+    const objects: Array<string | { dict: string; stream: Uint8Array }> = [];
     const pageCount = this.pages.length;
 
     objects.push("");
@@ -451,15 +509,23 @@ export class SimplePdf {
     objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
     objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
     objects.push("<< /Type /ExtGState /ca 0.12 /CA 0.12 >>");
+    const imageObjectNumber = this.crest ? 6 : null;
+    if (this.crest) {
+      objects.push({
+        dict: `<< /Type /XObject /Subtype /Image /Width ${this.crest.width} /Height ${this.crest.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${this.crest.data.byteLength} >>`,
+        stream: this.crest.data,
+      });
+    }
 
+    const xObjectResource = imageObjectNumber ? ` /XObject << /Im1 ${imageObjectNumber} 0 R >>` : "";
     const pageObjectNumbers: number[] = [];
     this.pages.forEach((cmds, index) => {
       const stream = this.pageStream(cmds, index + 1, pageCount);
-      const streamBytes = encoder.encode(stream).byteLength;
-      objects.push(`<< /Length ${streamBytes} >>\nstream\n${stream}endstream`);
+      const streamBytes = encoder.encode(stream);
+      objects.push({ dict: `<< /Length ${streamBytes.byteLength} >>`, stream: streamBytes });
       const contentNum = objects.length;
       objects.push(
-        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] /Contents ${contentNum} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /ExtGState << /GS1 5 0 R >> >> >>`
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] /Contents ${contentNum} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /ExtGState << /GS1 5 0 R >>${xObjectResource} >> >>`
       );
       pageObjectNumbers.push(objects.length);
     });
@@ -478,7 +544,14 @@ export class SimplePdf {
     const offsets = [0];
     objects.forEach((obj, i) => {
       offsets.push(offset);
-      add(encoder.encode(`${i + 1} 0 obj\n${obj}\nendobj\n`));
+      const n = i + 1;
+      if (typeof obj === "string") {
+        add(encoder.encode(`${n} 0 obj\n${obj}\nendobj\n`));
+        return;
+      }
+      add(encoder.encode(`${n} 0 obj\n${obj.dict}\nstream\n`));
+      add(obj.stream);
+      add(encoder.encode(`\nendstream\nendobj\n`));
     });
     const xrefPos = offset;
     let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
@@ -517,7 +590,7 @@ export function downloadCsv(filename: string, headers: string[], rows: string[][
   URL.revokeObjectURL(url);
 }
 
-export function downloadTablePdf(
+export async function downloadTablePdf(
   filename: string,
   title: string,
   subtitle: string,
@@ -530,5 +603,5 @@ export function downloadTablePdf(
   else pdf.setBrand({ schoolName: title, accent: "emerald", documentType: subtitle || title });
   pdf.heading(subtitle || title, new Date().toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }));
   pdf.table(headers, rows);
-  pdf.save(filename);
+  await pdf.save(filename);
 }

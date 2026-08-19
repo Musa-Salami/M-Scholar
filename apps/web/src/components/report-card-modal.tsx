@@ -6,6 +6,7 @@ import { useFinanceStore } from "@/lib/finance-store";
 import { useAcademicStore } from "@/lib/academic-store";
 import { useSchoolStore } from "@/lib/school-store";
 import { SimplePdf } from "@/lib/pdf";
+import { DocumentLetterhead } from "@/components/document-letterhead";
 import {
   formatResumptionDate,
   obtainableMarks,
@@ -41,7 +42,7 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
   const principalComment = principalRemark(average);
   const resumption = formatResumptionDate(settings.nextTermResumptionDate);
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
     const pdf = new SimplePdf();
     pdf.setBrand({
       schoolName: settings.schoolName,
@@ -80,7 +81,7 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
       { role: "Principal", name: principal },
     ]);
     pdf.paragraph(`This terminal report is an official record of ${settings.schoolName}.`);
-    pdf.save(`${student?.admissionNo ?? "report-card"}-report-card.pdf`);
+    await pdf.save(`${student?.admissionNo ?? "report-card"}-report-card.pdf`);
   };
 
   return (
@@ -93,10 +94,7 @@ export function ReportCardModal({ studentId, onClose }: ReportCardModalProps) {
           </button>
         </div>
         <div className="p-6">
-          <h1 className="text-xl font-bold text-blue-600">{settings.schoolName}</h1>
-          <p className="text-sm text-slate-500">
-            Official Terminal Report — {settings.term} · {settings.session}
-          </p>
+          <DocumentLetterhead subtitle={`Official Terminal Report — ${settings.term} · ${settings.session}`} />
           <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
             <p>
               <strong>Name:</strong> {student?.name}

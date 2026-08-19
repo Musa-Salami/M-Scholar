@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useFinanceStore } from "@/lib/finance-store";
 import { useSchoolStore } from "@/lib/school-store";
 import { SimplePdf, formatPdfMoney } from "@/lib/pdf";
+import { DocumentLetterhead } from "@/components/document-letterhead";
 
 interface ReceiptModalProps {
   payment: Payment;
@@ -35,7 +36,7 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
   const invoice = invoices.find((i) => i.id === payment.invoiceId);
   const stamp = receiptStamp(invoice?.status, invoice?.balance);
 
-  const downloadPdf = () => {
+  const downloadPdf = async () => {
     setBusy(true);
     try {
       const pdf = new SimplePdf();
@@ -66,7 +67,7 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
       pdf.paragraph(
         `Received by ${payment.recordedBy}. Keep this receipt as an official record of payment.`
       );
-      pdf.save(`${payment.receiptNo}.pdf`);
+      await pdf.save(`${payment.receiptNo}.pdf`);
     } finally {
       setBusy(false);
     }
@@ -86,8 +87,7 @@ export function ReceiptModal({ payment, onClose }: ReceiptModalProps) {
           <div className={`pointer-events-none absolute inset-0 flex items-center justify-center ${stamp.tone}`}>
             <span className="rotate-[-28deg] text-6xl font-black tracking-[0.35em]">{stamp.label}</span>
           </div>
-          <h1 className="text-xl font-bold text-slate-900">{settings.schoolName}</h1>
-          <p className="text-sm text-slate-500">Official fee payment receipt</p>
+          <DocumentLetterhead subtitle="Official fee payment receipt" />
           <p
             className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${
               stamp.label === "PAID" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
