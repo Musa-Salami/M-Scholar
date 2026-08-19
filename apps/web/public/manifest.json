@@ -1,17 +1,17 @@
 {
-  "name": "M-Scholar",
-  "short_name": "M-Scholar",
-  "description": "School Management System",
+  "name": "M-Scholars' Academy",
+  "short_name": "M-Scholars",
+  "description": "Academic Excellence & Moral Values",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#2563eb",
+  "background_color": "#FBF6EC",
+  "theme_color": "#1A1464",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/brand/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

@@ -60,7 +60,7 @@ export const SEED_SETTINGS: SchoolSettings = {
   address: SCHOOL.address,
   phone: SCHOOL.phone,
   email: SCHOOL.email,
-  session: "2025/2026",
+  session: "2026/2027",
   term: "First Term",
   principalName: "The Principal",
   nextTermResumptionDate: "2026-01-12",

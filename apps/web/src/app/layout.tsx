@@ -1,27 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Fraunces, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const sourceSans = Source_Sans_3({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-source",
+  display: "swap",
 });
 
-const jakarta = Plus_Jakarta_Sans({
+const fraunces = Fraunces({
   subsets: ["latin"],
-  variable: "--font-jakarta",
-  weight: ["600", "700", "800"],
+  variable: "--font-fraunces",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "M-Scholar — School Management System",
-  description: "Comprehensive school management for admins, finance, teachers, and parents.",
+  title: "M-Scholars' Academy — Academic Excellence & Moral Values",
+  description:
+    "Islamic and Western education in Ogaminana, Adavi LGA, Kogi State. Kindergarten to Primary. Call or WhatsApp 08035672451.",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, title: "M-Scholar" },
+  appleWebApp: { capable: true, title: "M-Scholars' Academy" },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2563eb",
+  themeColor: "#1A1464",
 };
 
 export default function RootLayout({
@@ -31,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${jakarta.variable} antialiased`}>
+      <body className={`${sourceSans.variable} ${fraunces.variable} antialiased`}>
         {children}
       </body>
     </html>

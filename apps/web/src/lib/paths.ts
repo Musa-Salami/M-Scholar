@@ -33,3 +33,9 @@ export function telHref(phone: string): string {
 export function mailtoHref(email: string): string {
   return `mailto:${email}`;
 }
+
+export function whatsappHref(phone: string, text?: string) {
+  const digits = phone.replace(/\D/g, "").replace(/^0/, "234");
+  const query = text ? `?text=${encodeURIComponent(text)}` : "";
+  return `https://wa.me/${digits}${query}`;
+}

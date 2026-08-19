@@ -1,18 +1,39 @@
 export const SCHOOL = {
-  name: "M-Scholar Demo Academy",
-  shortName: "M-Scholar Academy",
-  motto: "Excellence Through Knowledge",
-  tagline: "Nurturing minds, building character, shaping futures since 1998.",
-  address: "12 Education Road, Ikeja, Lagos, Nigeria",
-  phone: "+234 801 234 5678",
-  email: "info@mscholar.app",
-  founded: "1998",
-  stats: {
-    students: "1,200+",
-    teachers: "86",
-    years: "28",
-    passRate: "98%",
+  name: "M-Scholars' Academy",
+  shortName: "M-Scholars' Academy",
+  motto: "Academic Excellence & Moral Values",
+  vision: "Raising scholars with Allah's consciousness",
+  tagline: "Raising scholars, building futures.",
+  address: "Beside Fambeec Hotel, Opposite New Zango, Adavi LGA, Kogi State",
+  phone: "08035672451",
+  whatsapp: "2348035672451",
+  email: "yusyum87@gmail.com",
+  session: "2026/2027",
+  logo: "/brand/logo.png",
+  photos: {
+    hero: "/brand/classroom.png",
+    welcome: "/brand/welcome.png",
+    group: "/brand/group.png",
+    courtyard: "/brand/courtyard.png",
+    speechBoy: "/brand/speech-boy.png",
+    speechGirl: "/brand/speech-girl.png",
+    community: "/brand/community.png",
+    flyer: "/brand/flyer.png",
   },
+  levels: [
+    { name: "Kindergarten", detail: "First steps in a caring Islamic environment." },
+    { name: "Pre-Nursery", detail: "Play, language, and early moral formation." },
+    { name: "Nursery 1 & 2", detail: "Jolly Phonics, Montessori, and Qur'anic foundations." },
+    { name: "Primary 1 – 5", detail: "Integrated Islamic and Western education with Tahfeez." },
+  ],
+  reasons: [
+    "Qualified and experienced teachers",
+    "Integrated Islamic and Western education",
+    "Tahfeez and Islamic Studies",
+    "Jolly Phonics and Montessori approach",
+    "Safe and conducive learning environment",
+    "Strong moral and character development",
+  ],
 };
 
 export const PUBLIC_NAV = [
@@ -20,7 +41,7 @@ export const PUBLIC_NAV = [
   { label: "About", href: "/about" },
   { label: "Academics", href: "/academics" },
   { label: "Admissions", href: "/admissions" },
-  { label: "News & Events", href: "/news" },
+  { label: "School Life", href: "/news" },
   { label: "Contact", href: "/contact" },
 ] as const;
 

@@ -93,7 +93,7 @@ export class SimplePdf {
   private watermark: { text: string; r: number; g: number; b: number; size: number } | null = null;
   private brand: PdfBrand = {
     schoolName: "M-Scholar",
-    motto: "Excellence Through Knowledge",
+    motto: "Academic Excellence & Moral Values",
     accent: "sky",
     documentType: "Official record",
   };
